@@ -48,24 +48,31 @@ function getSecret(env){return env.SESSION_SECRET || 'karma-event-admin-session-
 function getPassword(env){return env.ADMIN_PASSWORD || DEFAULT_PASSWORD;}
 
 function parseDataUrl(dataUrl){
-  const m=String(dataUrl||'').match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/s);
+  const m=String(dataUrl||'').match(/^data:image\/(jpeg|jpg|webp|png);base64,(.+)$/s);
   if(!m) return null;
   const mime = m[1]==='png'?'image/png':m[1]==='webp'?'image/webp':'image/jpeg';
   const bin=atob(m[2]); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-  return {bytes,mime,ext:m[1]==='jpeg'?'jpg':m[1]};
+  return {bytes,mime};
 }
-function safe(s){return String(s||'').replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,80);}
-async function saveImage(env, dataUrl, keyBase){
-  if(!dataUrl || String(dataUrl).startsWith('/images/')) return String(dataUrl||'');
-  const parsed=parseDataUrl(dataUrl); if(!parsed) throw new Error('Invalid image data');
-  const key=`events/${safe(keyBase)}-${crypto.randomUUID()}.${parsed.ext}`;
-  await env.EVENT_IMAGES.put(key, parsed.bytes.buffer, {httpMetadata:{contentType:parsed.mime, cacheControl:'public, max-age=31536000, immutable'}});
-  return '/images/'+key.slice('events/'.length);
+function imageUrl(id){ return `/api?action=image&id=${encodeURIComponent(id)}`; }
+function asPublicImage(id){ return id ? imageUrl(id) : ''; }
+const MAX_IMAGE_BYTES = 650000;
+
+async function storeImage(env, dataUrl){
+  if(!dataUrl) return null;
+  const m=String(dataUrl).match(/\/image\/|data:image\//) ? String(dataUrl) : '';
+  if(m.startsWith('/api?action=image&id=')) return {id:new URL('https://x'+m).searchParams.get('id')};
+  const parsed=parseDataUrl(dataUrl);
+  if(!parsed) throw new Error('Invalid image data');
+  if(parsed.bytes.byteLength > MAX_IMAGE_BYTES) throw new Error('Image is too large after compression. Please use a smaller image.');
+  const id=crypto.randomUUID();
+  await env.DB.prepare('INSERT INTO event_images (id,mime_type,data,created_at) VALUES (?,?,?,?)')
+    .bind(id,parsed.mime,parsed.bytes,new Date().toISOString()).run();
+  return {id};
 }
-async function deleteImage(env, url){
-  if(!url || !String(url).startsWith('/images/'))return;
-  const name=String(url).slice('/images/'.length);
-  if(name) await env.EVENT_IMAGES.delete('events/'+name);
+async function deleteImageById(env,id){ if(id) await env.DB.prepare('DELETE FROM event_images WHERE id=?').bind(id).run(); }
+function parseImageId(url){
+  try { return new URL(String(url), 'https://karma.local').searchParams.get('id'); } catch { return null; }
 }
 
 export async function onRequest(context) {
@@ -84,9 +91,31 @@ export async function onRequest(context) {
     }
     if(request.method==='POST' && action==='logout') return json({ok:true},200,{'Set-Cookie':cookieHeader('',0)});
 
+    if(action==='image' && request.method==='GET') {
+      const id=String(url.searchParams.get('id')||'');
+      if(!id) return new Response('Missing image id',{status:400});
+      const row=await env.DB.prepare('SELECT mime_type,data FROM event_images WHERE id=?').bind(id).first();
+      if(!row) return new Response('Not found',{status:404});
+      // D1 returns BLOB columns as JavaScript arrays. Convert them to a byte buffer
+      // before passing them to the Fetch Response body.
+      let body = row.data;
+      if (Array.isArray(body)) body = new Uint8Array(body);
+      else if (ArrayBuffer.isView(body)) body = new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+      else if (body instanceof ArrayBuffer) body = new Uint8Array(body);
+      return new Response(body,{status:200,headers:{'Content-Type':row.mime_type,'Cache-Control':'public, max-age=31536000, immutable'}});
+    }
+
     if(action==='events' && request.method==='GET') {
-      const rows=await env.DB.prepare('SELECT id,name,date,location,category,description,cover_url AS cover,images_json,created_at,updated_at FROM events ORDER BY date DESC, created_at DESC').all();
-      return json({ok:true,events:(rows.results||[]).map(r=>({...r,images:JSON.parse(r.images_json||'[]')}))});
+      const rows=await env.DB.prepare(`SELECT e.id,e.name,e.date,e.location,e.category,e.description,e.cover_image_id,e.created_at,e.updated_at,
+        (SELECT GROUP_CONCAT(id, ',') FROM event_images WHERE event_id=e.id ORDER BY sort_order ASC) AS image_ids
+        FROM events e ORDER BY e.date DESC, e.created_at DESC`).all();
+      const events=(rows.results||[]).map(r=>({
+        id:r.id,name:r.name,date:r.date,location:r.location,category:r.category,description:r.description,
+        cover:asPublicImage(r.cover_image_id),
+        images:String(r.image_ids||'').split(',').filter(Boolean).map(asPublicImage),
+        created_at:r.created_at,updated_at:r.updated_at
+      }));
+      return json({ok:true,events});
     }
 
     const authed=await validSession(request,secret);
@@ -97,26 +126,40 @@ export async function onRequest(context) {
       if(!body.name || !body.date || !body.cover) return json({ok:false,error:'Event name, date and cover image are required'},400);
       const id=body.id || crypto.randomUUID();
       const existing=await env.DB.prepare('SELECT * FROM events WHERE id=?').bind(id).first();
-      let cover=await saveImage(env,body.cover,`cover-${id}`);
-      if(existing && String(body.cover).startsWith('/images/')) cover=existing.cover_url;
-      const inputImages=Array.isArray(body.images)?body.images.slice(0,8):[];
-      const images=[];
-      for(let i=0;i<inputImages.length;i++) images.push(await saveImage(env,inputImages[i],`gallery-${id}-${i}`));
-      if(existing){
-        const oldImages=JSON.parse(existing.images_json||'[]');
-        for(const old of oldImages) if(!images.includes(old)) await deleteImage(env,old);
-        if(existing.cover_url && existing.cover_url!==cover) await deleteImage(env,existing.cover_url);
+      const oldRows=existing ? await env.DB.prepare('SELECT id FROM event_images WHERE event_id=?').bind(id).all() : {results:[]};
+      const oldIds=new Set((oldRows.results||[]).map(r=>r.id));
+
+      const coverObj=String(body.cover).startsWith('/api?action=image&id=') ? {id:parseImageId(body.cover)} : await storeImage(env,body.cover);
+      if(!coverObj?.id) throw new Error('Cover image could not be saved');
+      const imageInputs=Array.isArray(body.images)?body.images.slice(0,8):[];
+      const imageObjs=[];
+      for(const item of imageInputs){ const obj=String(item).startsWith('/api?action=image&id=') ? {id:parseImageId(item)} : await storeImage(env,item); if(obj?.id) imageObjs.push(obj); }
+
+      const keepIds=new Set([coverObj.id,...imageObjs.map(x=>x.id)]);
+      for(const oldId of oldIds){ if(!keepIds.has(oldId)) await deleteImageById(env,oldId); }
+      await env.DB.prepare('DELETE FROM event_images WHERE event_id=?').bind(id).run();
+      await env.DB.prepare('INSERT INTO event_images (id,event_id,mime_type,data,sort_order,created_at) SELECT id,?,mime_type,data,CASE WHEN id=? THEN -1 ELSE ? END,created_at FROM event_images WHERE 1=0').bind(id,coverObj.id,0).run().catch(()=>{});
+      // Re-link existing/new image records without duplicating their data.
+      // Existing records are temporarily event-less until this point; use direct updates/inserts below.
+      const allIds=[coverObj.id,...imageObjs.map(x=>x.id)];
+      for(let i=0;i<allIds.length;i++){
+        const imgId=allIds[i];
+        await env.DB.prepare('UPDATE event_images SET event_id=?, sort_order=? WHERE id=?').bind(id,i-1,imgId).run();
       }
       const now=new Date().toISOString();
-      await env.DB.prepare(`INSERT INTO events (id,name,date,location,category,description,cover_url,images_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,date=excluded.date,location=excluded.location,category=excluded.category,description=excluded.description,cover_url=excluded.cover_url,images_json=excluded.images_json,updated_at=excluded.updated_at`)
-        .bind(id,String(body.name).trim(),String(body.date),String(body.location||'').trim(),String(body.category||'').trim(),String(body.description||'').trim(),cover,JSON.stringify(images),existing?.created_at||now,now).run();
-      return json({ok:true,event:{id,name:String(body.name).trim(),date:String(body.date),location:String(body.location||'').trim(),category:String(body.category||'').trim(),description:String(body.description||'').trim(),cover,images,created_at:existing?.created_at||now,updated_at:now}});
+      await env.DB.prepare(`INSERT INTO events (id,name,date,location,category,description,cover_image_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET name=excluded.name,date=excluded.date,location=excluded.location,category=excluded.category,description=excluded.description,cover_image_id=excluded.cover_image_id,updated_at=excluded.updated_at`)
+        .bind(id,String(body.name).trim(),String(body.date),String(body.location||'').trim(),String(body.category||'').trim(),String(body.description||'').trim(),coverObj.id,existing?.created_at||now,now).run();
+      return json({ok:true,event:{id,name:String(body.name).trim(),date:String(body.date),location:String(body.location||'').trim(),category:String(body.category||'').trim(),description:String(body.description||'').trim(),cover:asPublicImage(coverObj.id),images:imageObjs.map(x=>asPublicImage(x.id)),created_at:existing?.created_at||now,updated_at:now}});
     }
+
     if(action==='event-delete' && request.method==='POST') {
       const body=await request.json(); const id=String(body.id||''); if(!id)return json({ok:false,error:'Missing event id'},400);
-      const existing=await env.DB.prepare('SELECT * FROM events WHERE id=?').bind(id).first(); if(!existing)return json({ok:true});
-      await deleteImage(env,existing.cover_url); for(const img of JSON.parse(existing.images_json||'[]')) await deleteImage(env,img);
-      await env.DB.prepare('DELETE FROM events WHERE id=?').bind(id).run(); return json({ok:true});
+      const rows=await env.DB.prepare('SELECT id FROM event_images WHERE event_id=?').bind(id).all();
+      for(const r of (rows.results||[])) await deleteImageById(env,r.id);
+      await env.DB.prepare('DELETE FROM event_images WHERE event_id=?').bind(id).run();
+      await env.DB.prepare('DELETE FROM events WHERE id=?').bind(id).run();
+      return json({ok:true});
     }
 
     return json({ok:false,error:'Unknown action'},404);
