@@ -1,0 +1,8 @@
+{
+  "name": "karmaevent-cloudflare-pages",
+  "version": "2.0.1",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Karma Event static Pages build - no build step required'"
+  }
+}

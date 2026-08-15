@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — Karma Gallery Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #0A0A0A;
+  --dark: #111;
+  --panel: #161616;
+  --panel2: #1A1A1A;
+  --border: #222;
+  --gold: #D4AF37;
+  --gold-light: #F5D67B;
+  --gold-dim: #A8892B;
+  --gold-glow: rgba(212,175,55,0.18);
+  --white: #F8F5EE;
+  --muted: rgba(248,245,238,0.55);
+  --dim: rgba(248,245,238,0.3);
+  --glass: rgba(255,255,255,0.03);
+  --glass-border: rgba(212,175,55,0.18);
+  --red: #e05555;
+  --green: #4caf7d;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-serif;font-weight:300;min-height:100vh;}
+
+/* ── SIDEBAR ── */
+.layout{display:flex;min-height:100vh;}
+.sidebar{
+  width:260px;flex-shrink:0;
+  background:var(--dark);
+  border-right:1px solid var(--glass-border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.sidebar-logo{
+  padding:32px 24px 24px;
+  border-bottom:1px solid var(--glass-border);
+}
+.sidebar-logo .logo-mark{
+  font-family:'Cinzel',serif;
+  font-size:1.3rem;font-weight:700;
+  color:var(--white);letter-spacing:.12em;
+}
+.sidebar-logo .logo-mark span{color:var(--gold);}
+.sidebar-logo .logo-sub{
+  font-size:.55rem;letter-spacing:.3em;
+  color:var(--gold);text-transform:uppercase;
+  margin-top:4px;
+}
+.sidebar-badge{
+  display:inline-block;
+  background:rgba(212,175,55,0.15);
+  border:1px solid rgba(212,175,55,0.3);
+  color:var(--gold);font-size:.52rem;letter-spacing:.2em;
+  text-transform:uppercase;padding:3px 10px;border-radius:2px;
+  margin-top:10px;
+}
+.sidebar-nav{padding:20px 12px;flex:1;}
+.nav-section-label{
+  font-size:.5rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--dim);padding:0 12px;margin:16px 0 8px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 12px;border-radius:4px;
+  font-size:.72rem;letter-spacing:.05em;
+  color:var(--muted);cursor:pointer;
+  transition:all .25s;margin-bottom:2px;
+  border:1px solid transparent;
+}
+.nav-item:hover{color:var(--gold);background:rgba(212,175,55,0.06);border-color:rgba(212,175,55,0.1);}
+.nav-item.active{color:var(--gold);background:rgba(212,175,55,0.1);border-color:rgba(212,175,55,0.2);}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;}
+.sidebar-footer{
+  padding:20px 24px;
+  border-top:1px solid var(--glass-border);
+  font-size:.65rem;color:var(--dim);
+}
+.sidebar-footer strong{color:var(--gold);display:block;font-size:.7rem;margin-bottom:2px;}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{
+  height:64px;background:rgba(10,10,10,0.8);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-title{font-family:'Cinzel',serif;font-size:.95rem;letter-spacing:.1em;color:var(--white);}
+.topbar-actions{display:flex;gap:12px;align-items:center;}
+.btn{
+  font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+  padding:9px 20px;border-radius:3px;cursor:pointer;
+  font-family:'Montserrat',sans-serif;font-weight:500;
+  transition:all .3s;border:none;
+}
+.btn-gold{
+  background:linear-gradient(135deg,var(--gold),var(--gold-light));
+  color:var(--black);
+  box-shadow:0 4px 20px rgba(212,175,55,0.3);
+}
+.btn-gold:hover{box-shadow:0 6px 30px rgba(212,175,55,0.5);transform:translateY(-1px);}
+.btn-outline{
+  background:transparent;color:var(--gold);
+  border:1px solid rgba(212,175,55,0.4);
+}
+.btn-outline:hover{background:rgba(212,175,55,0.08);}
+.btn-danger{background:rgba(224,85,85,0.15);color:var(--red);border:1px solid rgba(224,85,85,0.3);}
+.btn-danger:hover{background:rgba(224,85,85,0.25);}
+.btn-sm{padding:6px 14px;font-size:.55rem;}
+
+.content{padding:32px;flex:1;}
+
+/* ── PAGE HEADER ── */
+.page-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:32px;
+}
+.page-header h1{
+  font-family:'Cinzel',serif;font-size:1.5rem;
+  font-weight:600;letter-spacing:.05em;color:var(--white);
+}
+.page-header p{font-size:.75rem;color:var(--muted);margin-top:6px;line-height:1.6;}
+.gold-line{width:50px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin-top:12px;}
+
+/* ── STATS STRIP ── */
+.stats-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+  margin-bottom:32px;
+}
+.stat-card{
+  background:var(--panel);border:1px solid var(--glass-border);
+  border-radius:6px;padding:20px 24px;
+  transition:all .3s;
+}
+.stat-card:hover{border-color:rgba(212,175,55,0.35);transform:translateY(-2px);}
+.stat-val{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:700;color:var(--gold);}
+.stat-lbl{font-size:.58rem;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-top:4px;}
+
+/* ── UPLOAD ZONE ── */
+.upload-zone{
+  background:var(--panel);border:2px dashed rgba(212,175,55,0.25);
+  border-radius:8px;padding:48px 32px;text-align:center;
+  cursor:pointer;transition:all .4s;margin-bottom:32px;
+  position:relative;overflow:hidden;
+}
+.upload-zone:hover,.upload-zone.drag-over{
+  border-color:var(--gold);
+  background:rgba(212,175,55,0.05);
+}
+.upload-zone .upload-icon{font-size:2.5rem;margin-bottom:16px;display:block;}
+.upload-zone h3{
+  font-family:'Cinzel',serif;font-size:.95rem;letter-spacing:.1em;
+  color:var(--white);margin-bottom:8px;
+}
+.upload-zone p{font-size:.7rem;color:var(--muted);}
+.upload-zone .gold-text{color:var(--gold);font-weight:500;}
+.upload-zone input[type=file]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+}
+
+/* ── SECTION CARD ── */
+.section-card{
+  background:var(--panel);border:1px solid var(--glass-border);
+  border-radius:8px;margin-bottom:24px;overflow:hidden;
+}
+.section-card-header{
+  padding:20px 24px;border-bottom:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.section-card-header h2{
+  font-family:'Cinzel',serif;font-size:.9rem;letter-spacing:.1em;color:var(--gold);
+}
+.section-card-body{padding:24px;}
+
+/* ── GALLERY GRID ── */
+.gallery-admin-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:16px;
+}
+.gallery-thumb{
+  position:relative;border-radius:6px;overflow:hidden;
+  aspect-ratio:4/3;
+  background:var(--panel2);
+  border:1px solid var(--glass-border);
+  transition:all .3s;
+  cursor:default;
+}
+.gallery-thumb:hover{border-color:rgba(212,175,55,0.5);transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.gallery-thumb img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform .4s;
+}
+.gallery-thumb:hover img{transform:scale(1.06);}
+.thumb-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(10,10,10,.9),rgba(10,10,10,.2));
+  opacity:0;transition:opacity .3s;
+  display:flex;flex-direction:column;justify-content:flex-end;padding:14px;
+}
+.gallery-thumb:hover .thumb-overlay{opacity:1;}
+.thumb-caption{font-size:.65rem;color:var(--white);margin-bottom:10px;font-style:italic;}
+.thumb-actions{display:flex;gap:8px;}
+.thumb-btn{
+  padding:5px 12px;border-radius:3px;font-size:.5rem;
+  letter-spacing:.15em;text-transform:uppercase;
+  cursor:pointer;border:none;font-family:'Montserrat',sans-serif;
+  font-weight:500;transition:all .2s;
+}
+.thumb-btn-edit{background:rgba(212,175,55,0.2);color:var(--gold);border:1px solid rgba(212,175,55,0.4);}
+.thumb-btn-edit:hover{background:rgba(212,175,55,0.35);}
+.thumb-btn-del{background:rgba(224,85,85,0.2);color:var(--red);border:1px solid rgba(224,85,85,0.4);}
+.thumb-btn-del:hover{background:rgba(224,85,85,0.35);}
+.thumb-num{
+  position:absolute;top:10px;left:10px;
+  background:rgba(10,10,10,.7);backdrop-filter:blur(6px);
+  border:1px solid rgba(212,175,55,0.3);
+  color:var(--gold);font-size:.55rem;letter-spacing:.2em;
+  padding:3px 8px;border-radius:2px;font-family:'Cinzel',serif;
+}
+.thumb-placeholder{
+  width:100%;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;
+  background:var(--panel2);border:2px dashed rgba(212,175,55,0.15);
+  border-radius:6px;cursor:pointer;transition:all .3s;
+  position:relative;
+}
+.thumb-placeholder:hover{border-color:rgba(212,175,55,0.4);background:rgba(212,175,55,0.04);}
+.thumb-placeholder .plus{font-size:1.8rem;color:rgba(212,175,55,0.4);}
+.thumb-placeholder span{font-size:.6rem;letter-spacing:.15em;color:var(--dim);text-transform:uppercase;}
+.thumb-placeholder input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+
+/* ── MODAL ── */
+.modal-bg{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(10,10,10,.85);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-bg.open{display:flex;}
+.modal{
+  background:var(--panel);border:1px solid rgba(212,175,55,.3);
+  border-radius:10px;width:100%;max-width:540px;overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,.8),0 0 0 1px rgba(212,175,55,.08);
+}
+.modal-header{
+  padding:24px 28px;border-bottom:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,rgba(212,175,55,.08),transparent);
+}
+.modal-header h3{font-family:'Cinzel',serif;font-size:1rem;letter-spacing:.1em;color:var(--white);}
+.modal-close{background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;transition:.2s;}
+.modal-close:hover{color:var(--gold);}
+.modal-body{padding:28px;}
+.modal-footer{padding:20px 28px;border-top:1px solid var(--glass-border);display:flex;gap:12px;justify-content:flex-end;}
+
+/* ── FORM ── */
+.form-group{margin-bottom:20px;}
+.form-label{display:block;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.form-input{
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(212,175,55,.2);border-radius:3px;
+  color:var(--white);font-size:.78rem;font-family:'Montserrat',sans-serif;
+  outline:none;transition:all .3s;
+}
+.form-input:focus{border-color:var(--gold);background:rgba(212,175,55,.04);box-shadow:0 0 16px rgba(212,175,55,.08);}
+.form-hint{font-size:.62rem;color:var(--dim);margin-top:6px;}
+
+/* ── IMAGE PREVIEW IN MODAL ── */
+.img-preview{
+  width:100%;height:180px;border-radius:4px;overflow:hidden;
+  background:var(--panel2);border:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:16px;position:relative;
+}
+.img-preview img{width:100%;height:100%;object-fit:cover;}
+.img-preview .no-img{font-size:.7rem;color:var(--dim);letter-spacing:.1em;}
+
+/* ── UPLOAD PROGRESS ── */
+.progress-bar-wrap{
+  background:var(--panel2);border-radius:20px;height:6px;overflow:hidden;
+  margin-top:8px;display:none;
+}
+.progress-bar-fill{
+  height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));
+  border-radius:20px;width:0%;transition:width .3s ease;
+}
+.progress-label{font-size:.58rem;color:var(--dim);margin-top:4px;display:none;}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px;}
+.toast{
+  background:var(--panel);border:1px solid var(--glass-border);
+  border-radius:6px;padding:14px 20px;font-size:.72rem;
+  min-width:240px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);
+  animation:slideIn .3s ease;
+}
+.toast.success{border-color:rgba(76,175,125,.4);}
+.toast.error{border-color:rgba(224,85,85,.4);}
+.toast-icon{font-size:1rem;}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:none;}}
+@keyframes slideOut{to{opacity:0;transform:translateX(20px);}}
+
+/* ── DRAG HANDLE ── */
+.gallery-thumb.sortable-drag{opacity:.4;}
+.drag-handle{
+  position:absolute;top:10px;right:10px;
+  background:rgba(10,10,10,.7);backdrop-filter:blur(6px);
+  border:1px solid rgba(212,175,55,.2);
+  width:28px;height:28px;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:grab;color:var(--gold);font-size:.8rem;
+  opacity:0;transition:.2s;
+}
+.gallery-thumb:hover .drag-handle{opacity:1;}
+
+/* ── EMPTY STATE ── */
+.empty-state{
+  text-align:center;padding:60px 20px;
+}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:16px;opacity:.5;}
+.empty-state h3{font-family:'Cinzel',serif;font-size:1rem;letter-spacing:.1em;color:var(--white);margin-bottom:8px;}
+.empty-state p{font-size:.72rem;color:var(--muted);}
+
+/* ── COLOR BADGE ── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;}
+.badge-gold{background:rgba(212,175,55,.15);color:var(--gold);border:1px solid rgba(212,175,55,.25);}
+.badge-green{background:rgba(76,175,125,.15);color:var(--green);border:1px solid rgba(76,175,125,.25);}
+.badge-dim{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid rgba(255,255,255,.08);}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--dark);}
+::-webkit-scrollbar-thumb{background:rgba(212,175,55,.2);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(212,175,55,.4);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .sidebar{width:64px;}
+  .sidebar-logo .logo-mark,.sidebar-logo .logo-sub,.sidebar-badge,.sidebar-footer,.nav-section-label,.nav-item span{display:none;}
+  .nav-item{justify-content:center;padding:12px;}
+  .stats-strip{grid-template-columns:repeat(2,1fr);}
+  .content{padding:20px;}
+  .topbar{padding:0 16px;}
+}
+@media(max-width:600px){
+  .gallery-admin-grid{grid-template-columns:repeat(2,1fr);}
+  .stats-strip{grid-template-columns:1fr 1fr;}
+}
+/* ── HIDDEN ADMIN LOGIN ── */
+#adminApp{display:none;}
+#adminLogin{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 20%,rgba(212,175,55,.10),transparent 55%),var(--black);}
+.login-card{width:100%;max-width:420px;background:var(--panel);border:1px solid rgba(212,175,55,.28);border-radius:10px;padding:38px;box-shadow:0 30px 100px rgba(0,0,0,.8);text-align:center;}
+.login-logo{font-family:'Cinzel',serif;font-size:2rem;font-weight:700;letter-spacing:.16em;}.login-logo span{color:var(--gold);}.login-sub{font-size:.55rem;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin-top:7px;margin-bottom:30px;}.login-error{min-height:18px;color:var(--red);font-size:.65rem;margin-top:10px;}.login-lock{font-size:2rem;margin-bottom:16px;filter:drop-shadow(0 0 10px rgba(212,175,55,.35));}
+.events-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}.event-admin-card{background:var(--panel2);border:1px solid var(--glass-border);border-radius:7px;overflow:hidden;}.event-admin-card img{width:100%;height:150px;object-fit:cover;display:block;}.event-admin-card-body{padding:16px;}.event-admin-card h3{font-family:'Cinzel',serif;font-size:.78rem;color:var(--white);letter-spacing:.06em;margin-bottom:7px;}.event-meta{font-size:.6rem;color:var(--gold);letter-spacing:.08em;margin-bottom:8px;}.event-desc{font-size:.66rem;color:var(--muted);line-height:1.6;min-height:42px;}.event-actions{display:flex;gap:8px;margin-top:14px;}.event-empty{grid-column:1/-1;text-align:center;padding:45px 20px;color:var(--dim);font-size:.7rem;border:1px dashed rgba(212,175,55,.14);border-radius:6px;}.event-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}.event-form-full{grid-column:1/-1;}.event-image-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}.event-image-preview img{width:74px;height:54px;object-fit:cover;border-radius:4px;border:1px solid var(--glass-border);}@media(max-width:700px){.event-form-grid{grid-template-columns:1fr;}.event-form-full{grid-column:auto;}}
+
+</style>
+<!-- Vercel Web Analytics -->
+<script src="/analytics.js"></script>
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+<div id="adminLogin"><div class="login-card"><div class="login-lock">🔐</div><div class="login-logo">KAR<span>MA</span></div><div class="login-sub">Private Admin Access</div><div class="form-group" style="text-align:left;"><label class="form-label">Admin Password</label><input id="adminPassword" class="form-input" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')adminLogin()"></div><button class="btn btn-gold" style="width:100%;" onclick="adminLogin()">Unlock Admin Panel</button><div id="loginError" class="login-error"></div></div></div>
+<div id="adminApp">
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">KAR<span>MA</span></div>
+      <div class="logo-sub">Admin Panel</div>
+      <div class="sidebar-badge">Gallery Manager</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <div class="nav-item active" onclick="setPage('gallery')">
+        <span class="icon">🖼️</span><span>Luxury Gallery</span>
+      </div>
+      <div class="nav-item" onclick="setPage('events')">
+        <span class="icon">🏆</span><span>Completed Events</span>
+      </div>
+      <div class="nav-item" onclick="openWebsite()">
+        <span class="icon">🌐</span><span>View Website</span>
+      </div>
+      <div class="nav-section-label">Tools</div>
+      <div class="nav-item" onclick="exportData()">
+        <span class="icon">📤</span><span>Export Config</span>
+      </div>
+      <div class="nav-item" onclick="importData()">
+        <span class="icon">📥</span><span>Import Config</span>
+      </div>
+      <div class="nav-item" onclick="clearAll()">
+        <span class="icon">🗑️</span><span>Clear All Images</span>
+      </div>
+      <div class="nav-item" onclick="adminLogout()">
+        <span class="icon">🔒</span><span>Lock Admin</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <strong>Kishan Mistry</strong>
+      Karma Event Management
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-title">✦ Gallery Manager</div>
+      <div class="topbar-actions">
+        <span id="saveStatus" class="badge badge-dim">Auto-save on</span>
+        <button class="btn btn-outline btn-sm" onclick="previewGallery()">👁 Preview</button>
+        <button class="btn btn-gold btn-sm" onclick="applyToWebsite()">✦ Apply to Website</button>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div>
+          <h1>Luxury Gallery</h1>
+          <p>Upload, manage and reorder your premium event images.<br>Changes apply instantly to the main website.</p>
+          <div class="gold-line"></div>
+        </div>
+        <button class="btn btn-gold" onclick="document.getElementById('bulkUploadInput').click()">+ Add Images</button>
+        <input type="file" id="bulkUploadInput" accept="image/*" multiple style="display:none" onchange="handleBulkUpload(this)">
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-strip">
+        <div class="stat-card">
+          <div class="stat-val" id="statTotal">0</div>
+          <div class="stat-lbl">Total Images</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statSlots">8</div>
+          <div class="stat-lbl">Gallery Slots</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statFilled">0</div>
+          <div class="stat-lbl">Slots Filled</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statEmpty">8</div>
+          <div class="stat-lbl">Empty Slots</div>
+        </div>
+      </div>
+
+      <!-- UPLOAD DROP ZONE -->
+      <div class="upload-zone" id="dropZone">
+        <input type="file" accept="image/*" multiple onchange="handleBulkUpload(this)" title="">
+        <span class="upload-icon">🖼️</span>
+        <h3>Drop Your Luxury Event Images</h3>
+        <p>Drag & drop images here or <span class="gold-text">click to browse</span><br>
+        Supports JPG, PNG, WebP · Multiple files allowed · Max 10MB each</p>
+        <div class="progress-bar-wrap" id="uploadProgress" style="margin-top:16px;max-width:300px;margin-left:auto;margin-right:auto;">
+          <div class="progress-bar-fill" id="uploadFill"></div>
+        </div>
+        <div class="progress-label" id="uploadLabel"></div>
+      </div>
+
+      <!-- GALLERY GRID -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>✦ Gallery Images <span id="gridCount" class="badge badge-gold" style="margin-left:8px;font-family:'Montserrat'">0/8</span></h2>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="sortByName()">Sort A→Z</button>
+            <button class="btn btn-outline btn-sm" onclick="sortByDate()">Sort Newest</button>
+          </div>
+        </div>
+        <div class="section-card-body">
+          <div class="gallery-admin-grid" id="galleryGrid">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPLETED EVENTS -->
+      <div class="section-card" id="eventsSection">
+        <div class="section-card-header"><h2>✦ Completed Events <span id="eventCount" class="badge badge-gold" style="margin-left:8px;font-family:'Montserrat'">0</span></h2><button class="btn btn-gold btn-sm" onclick="openEventForm()">+ Add Completed Event</button></div>
+        <div class="section-card-body"><div class="events-admin-grid" id="eventsAdminGrid"></div></div>
+      </div>
+
+      <!-- INSTRUCTIONS -->
+      <div class="section-card">
+        <div class="section-card-header"><h2>✦ How to Use</h2></div>
+        <div class="section-card-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+            <div style="padding:16px;background:var(--panel2);border-radius:6px;border:1px solid var(--glass-border);">
+              <div style="font-size:1.4rem;margin-bottom:8px;">📁</div>
+              <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);margin-bottom:6px;">1. Upload Images</div>
+              <div style="font-size:.7rem;color:var(--muted);line-height:1.7;">Click any empty slot or use the drop zone to upload your event images. Supports multiple files at once.</div>
+            </div>
+            <div style="padding:16px;background:var(--panel2);border-radius:6px;border:1px solid var(--glass-border);">
+              <div style="font-size:1.4rem;margin-bottom:8px;">✏️</div>
+              <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);margin-bottom:6px;">2. Edit Captions</div>
+              <div style="font-size:.7rem;color:var(--muted);line-height:1.7;">Hover any image and click Edit to change the caption label shown on hover in the gallery.</div>
+            </div>
+            <div style="padding:16px;background:var(--panel2);border-radius:6px;border:1px solid var(--glass-border);">
+              <div style="font-size:1.4rem;margin-bottom:8px;">✦</div>
+              <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);margin-bottom:6px;">3. Apply to Website</div>
+              <div style="font-size:.7rem;color:var(--muted);line-height:1.7;">Completed Events are saved on the Cloudflare server. Everyone visiting the website can see your saved events.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+</div>
+
+<!-- EDIT MODAL -->
+<!-- COMPLETED EVENT MODAL -->
+<div class="modal-bg" id="eventModal"><div class="modal" style="max-width:720px;"><div class="modal-header"><h3 id="eventModalTitle">✦ Add Completed Event</h3><button class="modal-close" onclick="closeEventForm()">✕</button></div><div class="modal-body"><div class="event-form-grid"><div class="form-group"><label class="form-label">Event Name *</label><input id="eventName" class="form-input" placeholder="e.g. Shantinagar Pratishtha Mahotsav"></div><div class="form-group"><label class="form-label">Date *</label><input id="eventDate" class="form-input" type="date"></div><div class="form-group"><label class="form-label">Location</label><input id="eventLocation" class="form-input" placeholder="e.g. Ahmedabad, Gujarat"></div><div class="form-group"><label class="form-label">Category</label><input id="eventCategory" class="form-input" placeholder="e.g. Jain Event / Wedding / Corporate"></div><div class="form-group event-form-full"><label class="form-label">Short Description</label><textarea id="eventDescription" class="form-input" rows="4" placeholder="What Karma managed for this event..."></textarea></div><div class="form-group event-form-full"><label class="form-label">Cover Image *</label><input id="eventCover" class="form-input" type="file" accept="image/*" onchange="previewEventImages(this,'eventCoverPreview')"><div class="event-image-preview" id="eventCoverPreview"></div></div><div class="form-group event-form-full"><label class="form-label">Event Gallery Images</label><input id="eventGallery" class="form-input" type="file" accept="image/*" multiple onchange="previewEventImages(this,'eventGalleryPreview')"><div class="form-hint">Recommended: 3–8 photos. Images are optimized in the browser before saving.</div><div class="event-image-preview" id="eventGalleryPreview"></div></div></div></div><div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeEventForm()">Cancel</button><button class="btn btn-gold btn-sm" onclick="saveEvent()">Save Completed Event</button></div></div></div>
+
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✦ Edit Gallery Image</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="img-preview" id="modalPreview">
+        <span class="no-img">No image</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Caption Label</label>
+        <input type="text" class="form-input" id="modalCaption" placeholder="e.g. Grand Wedding Ceremony">
+        <div class="form-hint">This text appears on hover over the image in the gallery.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Replace Image</label>
+        <input type="file" class="form-input" id="modalReplaceFile" accept="image/*" onchange="handleReplacePreview(this)" style="padding:10px 12px;cursor:pointer;">
+        <div class="form-hint">Leave blank to keep current image.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold btn-sm" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-bg" id="deleteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚠ Confirm Delete</h3>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="img-preview" id="deletePreview"></div>
+      <p style="font-size:.8rem;color:var(--muted);line-height:1.7;">Are you sure you want to remove this image from the gallery? This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmDelete()">🗑 Delete Image</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="modal-bg" id="previewModal" style="z-index:99998;">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-header">
+      <h3>✦ Gallery Preview</h3>
+      <button class="modal-close" onclick="document.getElementById('previewModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div id="previewGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-height:60vh;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-gold btn-sm" onclick="applyToWebsite();document.getElementById('previewModal').classList.remove('open')">✦ Apply to Website</button></div>
+  </div>
+</div>
+
+<!-- IMPORT FILE INPUT -->
+<input type="file" id="importInput" accept=".json" style="display:none" onchange="handleImport(this)">
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ── SERVER-SIDE ADMIN AUTH ──
+async function apiRequest(action, options={}){
+  const base={headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin'};
+  const res=await fetch('/api?action='+encodeURIComponent(action),Object.assign(base,options));
+  let data=null; try{data=await res.json();}catch(e){data={ok:false,error:'Server did not return JSON. Check your Cloudflare Pages Function deployment.'};}
+  if(res.status===401) throw Object.assign(new Error(data.error||'Unauthorized'),{code:401});
+  if(!res.ok||data.ok===false) throw new Error(data.error||'Request failed');
+  return data;
+}
+async function adminLogin(){const input=document.getElementById('adminPassword'),error=document.getElementById('loginError');error.textContent='';try{await apiRequest('login',{method:'POST',body:JSON.stringify({password:input.value})});document.getElementById('adminLogin').style.display='none';document.getElementById('adminApp').style.display='block';input.value='';await init();}catch(e){error.textContent=e.message||'Unable to login.';input.select();}}
+async function adminLogout(){try{await apiRequest('logout',{method:'POST'});}catch(e){}document.getElementById('adminApp').style.display='none';document.getElementById('adminLogin').style.display='flex';document.getElementById('adminPassword').focus();}
+async function checkServerSession(){try{const d=await apiRequest('session');return !!d.authenticated;}catch(e){return false;}}
+
+// ── STATE ──
+const STORAGE_KEY = 'karma_gallery_v2';
+const EVENTS_STORAGE_KEY = 'karma_completed_events_v1';
+const MAX_SLOTS = 8;
+const MAX_EVENT_GALLERY = 8;
+
+const DEFAULT_CAPTIONS = [
+  'Grand Wedding Ceremony','VIP Corporate Gala','Destination Wedding',
+  'Concert Production','Celebrity Event','Luxury Reception',
+  'Festival Management','Private Party'
+];
+
+let galleryItems = []; // { id, src, caption, dateAdded }
+let completedEvents = [];
+let editingId = null;
+let deletingId = null;
+let replacePreviewSrc = null;
+
+// ── INIT ──
+async function init(){load();await loadEvents();renderGrid();renderEvents();updateStats();setupDrop();}
+
+// ── STORAGE ──
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(galleryItems));
+    document.getElementById('saveStatus').textContent = 'Saved ✓';
+    document.getElementById('saveStatus').className = 'badge badge-green';
+    setTimeout(() => {
+      document.getElementById('saveStatus').textContent = 'Auto-save on';
+      document.getElementById('saveStatus').className = 'badge badge-dim';
+    }, 2000);
+  } catch(e) {
+    toast('Storage full — images may not save', 'error');
+  }
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) galleryItems = JSON.parse(raw);
+  } catch(e) { galleryItems = []; }
+}
+async function saveEvents(){return true;}
+async function loadEvents(){try{const d=await apiRequest('events');completedEvents=Array.isArray(d.events)?d.events:[];}catch(e){completedEvents=[];if(e.code!==401)toast(e.message||'Could not load events from server','error');}}
+
+// ── RENDER ──
+function renderGrid() {
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = '';
+
+  // Show filled slots
+  galleryItems.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'gallery-thumb';
+    div.dataset.id = item.id;
+    div.innerHTML = `
+      <img src="${item.src}" alt="${item.caption}" loading="lazy">
+      <div class="thumb-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="drag-handle" title="Drag to reorder">⠿</div>
+      <div class="thumb-overlay">
+        <div class="thumb-caption">${item.caption}</div>
+        <div class="thumb-actions">
+          <button class="thumb-btn thumb-btn-edit" onclick="openEdit('${item.id}')">✏ Edit</button>
+          <button class="thumb-btn thumb-btn-del" onclick="openDelete('${item.id}')">🗑</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+
+  // Show empty slots up to MAX_SLOTS
+  const remaining = MAX_SLOTS - galleryItems.length;
+  for (let i = 0; i < remaining; i++) {
+    const slotIdx = galleryItems.length + i + 1;
+    const div = document.createElement('div');
+    div.className = 'gallery-thumb';
+    div.innerHTML = `
+      <div class="thumb-placeholder" onclick="triggerSlotUpload(${slotIdx})">
+        <div class="plus">+</div>
+        <span>Slot ${slotIdx}</span>
+        <input type="file" accept="image/*" onchange="handleSlotUpload(this, ${slotIdx - 1})">
+      </div>
+    `;
+    grid.appendChild(div);
+  }
+
+  document.getElementById('gridCount').textContent = `${galleryItems.length}/${MAX_SLOTS}`;
+  updateStats();
+  initDragDrop();
+}
+
+function updateStats() {
+  const total = galleryItems.length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statFilled').textContent = total;
+  document.getElementById('statEmpty').textContent = Math.max(0, MAX_SLOTS - total);
+}
+
+// ── UPLOAD ──
+function handleBulkUpload(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  processFiles(files);
+  input.value = '';
+}
+
+function handleSlotUpload(input, slotIdx) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  processFiles([files[0]]);
+}
+
+function processFiles(files) {
+  const allowed = Math.min(files.length, MAX_SLOTS - galleryItems.length);
+  if (allowed <= 0) { toast('Gallery is full (8 images maximum)', 'error'); return; }
+
+  const progressWrap = document.getElementById('uploadProgress');
+  const progressFill = document.getElementById('uploadFill');
+  const progressLabel = document.getElementById('uploadLabel');
+  progressWrap.style.display = 'block';
+  progressLabel.style.display = 'block';
+
+  let done = 0;
+  const toProcess = files.slice(0, allowed);
+
+  toProcess.forEach((file, i) => {
+    if (!file.type.startsWith('image/')) { toast(`${file.name} is not an image`, 'error'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast(`${file.name} exceeds 10MB limit`, 'error'); return; }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      galleryItems.push({
+        id: 'img_' + Date.now() + '_' + i,
+        src: e.target.result,
+        caption: DEFAULT_CAPTIONS[galleryItems.length] || `Event Photo ${galleryItems.length + 1}`,
+        dateAdded: new Date().toISOString()
+      });
+      done++;
+      const pct = Math.round((done / toProcess.length) * 100);
+      progressFill.style.width = pct + '%';
+      progressLabel.textContent = `Uploading ${done} of ${toProcess.length}...`;
+
+      if (done === toProcess.length) {
+        save();
+        renderGrid();
+        setTimeout(() => {
+          progressWrap.style.display = 'none';
+          progressLabel.style.display = 'none';
+          progressFill.style.width = '0%';
+        }, 800);
+        toast(`${done} image${done > 1 ? 's' : ''} added to gallery ✓`, 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  if (files.length > allowed) {
+    toast(`Only ${allowed} slot${allowed > 1 ? 's' : ''} available — extra images skipped`, 'error');
+  }
+}
+
+// ── DRAG & DROP ZONE ──
+function setupDrop() {
+  const zone = document.getElementById('dropZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (files.length) processFiles(files);
+  });
+}
+
+// ── COMPLETED EVENTS ──
+let editingEventId=null,eventCoverData='',eventGalleryData=[];
+function setPage(page){if(page==='events')document.getElementById('eventsSection').scrollIntoView({behavior:'smooth'});else document.getElementById('galleryGrid').scrollIntoView({behavior:'smooth'});}
+function openEventForm(id=null){editingEventId=id;eventCoverData='';eventGalleryData=[];document.getElementById('eventModalTitle').textContent=id?'✦ Edit Completed Event':'✦ Add Completed Event';const item=id?completedEvents.find(x=>x.id===id):null;document.getElementById('eventName').value=item?.name||'';document.getElementById('eventDate').value=item?.date||'';document.getElementById('eventLocation').value=item?.location||'';document.getElementById('eventCategory').value=item?.category||'';document.getElementById('eventDescription').value=item?.description||'';document.getElementById('eventCover').value='';document.getElementById('eventGallery').value='';if(item){eventCoverData=item.cover||'';eventGalleryData=Array.isArray(item.images)?[...item.images]:[];}document.getElementById('eventCoverPreview').innerHTML=eventCoverData?`<img src="${eventCoverData}" alt="">`:'';document.getElementById('eventGalleryPreview').innerHTML=eventGalleryData.map(src=>`<img src="${src}" alt="">`).join('');document.getElementById('eventModal').classList.add('open');}
+function closeEventForm(){document.getElementById('eventModal').classList.remove('open');editingEventId=null;eventCoverData='';eventGalleryData=[];}
+function previewEventImages(input,targetId){const files=Array.from(input.files||[]);if(!files.length)return;if(targetId==='eventCoverPreview'){readOptimizedImage(files[0]).then(src=>{eventCoverData=src;document.getElementById(targetId).innerHTML=`<img src="${src}" alt="">`;});}else{Promise.all(files.slice(0,MAX_EVENT_GALLERY).map(readOptimizedImage)).then(srcs=>{eventGalleryData=srcs;document.getElementById(targetId).innerHTML=srcs.map(src=>`<img src="${src}" alt="">`).join('');});}}
+function readOptimizedImage(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=e=>{const img=new Image();img.onload=()=>{let max=1400,quality=.72;const canvas=document.createElement('canvas');const render=()=>{const scale=Math.min(1,max/img.width,max/img.height);canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);const out=canvas.toDataURL('image/jpeg',quality);if(out.length>850000 && quality>.5){quality-=.06;return render();}if(out.length>850000 && max>800){max=Math.max(800,Math.round(max*.82));quality=.68;return render();}resolve(out);};render();};img.onerror=reject;img.src=e.target.result;};reader.onerror=reject;reader.readAsDataURL(file);});}
+async function saveEvent(){const name=document.getElementById('eventName').value.trim(),date=document.getElementById('eventDate').value;const cover=eventCoverData;if(!name||!date||!cover){toast('Event name, date and cover image are required','error');return;}const btn=document.querySelector('#eventModal .btn-gold');if(btn)btn.disabled=true;try{const d=await apiRequest('event-save',{method:'POST',body:JSON.stringify({id:editingEventId||'',name,date,location:document.getElementById('eventLocation').value.trim(),category:document.getElementById('eventCategory').value.trim(),description:document.getElementById('eventDescription').value.trim(),cover,images:eventGalleryData.slice(0,MAX_EVENT_GALLERY)})});const i=completedEvents.findIndex(x=>x.id===d.event.id);if(i>=0)completedEvents[i]=d.event;else completedEvents.unshift(d.event);renderEvents();closeEventForm();toast('Completed event saved to server ✓','success');}catch(e){toast(e.message||'Could not save event','error');}finally{if(btn)btn.disabled=false;}}
+async function deleteEvent(id){const item=completedEvents.find(x=>x.id===id);if(!item||!confirm(`Delete "${item.name}" from completed events?`))return;try{await apiRequest('event-delete',{method:'POST',body:JSON.stringify({id})});completedEvents=completedEvents.filter(x=>x.id!==id);renderEvents();toast('Completed event removed from server ✓','success');}catch(e){toast(e.message||'Could not delete event','error');}}
+
+// ── EDIT ──
+function openEdit(id) {
+  editingId = id;
+  replacePreviewSrc = null;
+  const item = galleryItems.find(x => x.id === id);
+  if (!item) return;
+  document.getElementById('modalCaption').value = item.caption;
+  const preview = document.getElementById('modalPreview');
+  preview.innerHTML = `<img src="${item.src}" alt="">`;
+  document.getElementById('modalReplaceFile').value = '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function handleReplacePreview(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    replacePreviewSrc = e.target.result;
+    document.getElementById('modalPreview').innerHTML = `<img src="${e.target.result}" alt="">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveEdit() {
+  if (!editingId) return;
+  const idx = galleryItems.findIndex(x => x.id === editingId);
+  if (idx < 0) return;
+  galleryItems[idx].caption = document.getElementById('modalCaption').value.trim() || galleryItems[idx].caption;
+  if (replacePreviewSrc) galleryItems[idx].src = replacePreviewSrc;
+  save();
+  renderGrid();
+  closeModal();
+  toast('Image updated successfully ✓', 'success');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editingId = null;
+  replacePreviewSrc = null;
+}
+
+// ── DELETE ──
+function openDelete(id) {
+  deletingId = id;
+  const item = galleryItems.find(x => x.id === id);
+  if (!item) return;
+  document.getElementById('deletePreview').innerHTML = `<img src="${item.src}" style="width:100%;height:100%;object-fit:cover;" alt="">`;
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function confirmDelete() {
+  if (!deletingId) return;
+  galleryItems = galleryItems.filter(x => x.id !== deletingId);
+  save();
+  renderGrid();
+  closeDeleteModal();
+  toast('Image removed from gallery', 'success');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('open');
+  deletingId = null;
+}
+
+// ── SORT ──
+function sortByName() {
+  galleryItems.sort((a, b) => a.caption.localeCompare(b.caption));
+  save(); renderGrid(); toast('Sorted alphabetically', 'success');
+}
+
+function sortByDate() {
+  galleryItems.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+  save(); renderGrid(); toast('Sorted by newest first', 'success');
+}
+
+// ── APPLY TO WEBSITE ──
+function applyToWebsite() {
+  // Store the gallery data so the main site can pick it up
+  try {
+    localStorage.setItem('karma_gallery_live', JSON.stringify(galleryItems));
+    toast('✦ Gallery applied to website! Refresh the main site to see changes.', 'success');
+  } catch(e) {
+    toast('Could not apply — storage may be full', 'error');
+  }
+}
+
+// ── PREVIEW ──
+function previewGallery() {
+  const grid = document.getElementById('previewGrid');
+  if (!galleryItems.length) {
+    grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:.75rem;grid-column:1/-1;">No images uploaded yet.</div>';
+  } else {
+    grid.innerHTML = galleryItems.map(item => `
+      <div style="position:relative;aspect-ratio:4/3;overflow:hidden;">
+        <img src="${item.src}" style="width:100%;height:100%;object-fit:cover;" alt="${item.caption}">
+        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,.8),transparent);padding:12px 10px;font-size:.62rem;color:#D4AF37;font-style:italic;">${item.caption}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('previewModal').classList.add('open');
+}
+
+// ── EXPORT ──
+function exportData() {
+  const data = JSON.stringify({gallery:galleryItems,completedEvents:completedEvents}, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'karma-gallery-config.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Gallery config exported ✓', 'success');
+}
+
+// ── IMPORT ──
+function importData() {
+  document.getElementById('importInput').click();
+}
+
+function handleImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!Array.isArray(parsed)) throw new Error();
+      galleryItems = Array.isArray(parsed.gallery) ? parsed.gallery.slice(0, MAX_SLOTS) : (Array.isArray(parsed) ? parsed.slice(0, MAX_SLOTS) : []); completedEvents = Array.isArray(parsed.completedEvents) ? parsed.completedEvents : completedEvents; saveEvents();
+      save(); renderGrid();
+      toast(`Imported ${galleryItems.length} images ✓`, 'success');
+    } catch { toast('Invalid config file', 'error'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ── CLEAR ──
+function clearAll() {
+  if (!galleryItems.length) { toast('Gallery is already empty', 'error'); return; }
+  if (!confirm(`Remove all ${galleryItems.length} images from the gallery?`)) return;
+  galleryItems = [];
+  save(); renderGrid();
+  toast('Gallery cleared', 'success');
+}
+
+// ── OPEN WEBSITE ──
+function openWebsite() {
+  window.open('index.html', '_blank');
+}
+
+// ── TOAST ──
+function toast(msg, type = 'success') {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${type === 'success' ? '✓' : '⚠'}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'slideOut .3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, 3500);
+}
+
+// ── TRIGGER SLOT UPLOAD (prevent double event) ──
+function triggerSlotUpload(slot) {
+  // handled by the input inside the placeholder
+}
+
+// ── CLOSE MODALS ON BG CLICK ──
+document.getElementById('editModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('deleteModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeDeleteModal(); });
+document.getElementById('previewModal').addEventListener('click', e => { if(e.target===e.currentTarget) document.getElementById('previewModal').classList.remove('open'); });
+document.getElementById('eventModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeEventForm(); });
+
+// ── KEYBOARD ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal(); closeDeleteModal();
+    document.getElementById('previewModal').classList.remove('open');
+  }
+});
+
+// ── START ──
+(async function(){const ok=await checkServerSession();document.getElementById('adminLogin').style.display=ok?'none':'flex';document.getElementById('adminApp').style.display=ok?'block':'none';if(ok)await init();else document.getElementById('adminPassword').focus();})();
+
+// ── INJECT LIVE GALLERY INTO MAIN SITE ──
+// This script patches the main site's gallery when opened via "View Website"
+// by storing data in localStorage which the main site reads.
+// To enable live sync, add this snippet to index.html just before </body>:
+/*
+(function(){
+  const live = localStorage.getItem('karma_gallery_live');
+  if (!live) return;
+  try {
+    const items = JSON.parse(live);
+    const grid = document.querySelector('.gallery-grid');
+    if (!grid || !items.length) return;
+    grid.innerHTML = items.map((item, i) => `
+      <div class="gallery-item">
+        <div class="gallery-img" style="height:${[260,180,320,200,280,160,240,190][i%8]}px;background:#111;position:relative;overflow:hidden;">
+          <img src="${item.src}" alt="${item.caption}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;transition:transform .6s ease;">
+        </div>
+        <div class="gallery-overlay"><span>${item.caption}</span></div>
+      </div>
+    `).join('');
+  } catch(e) {}
+})();
+*/
+</script>
+</body>
+</html>
