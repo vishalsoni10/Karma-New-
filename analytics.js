@@ -4,24 +4,24 @@
 (function () {
   function esc(value) {
     return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
   window.renderEvents = function renderEvents() {
     const grid = document.getElementById('eventsAdminGrid');
     if (!grid) return;
 
-    const events = Array.isArray(window.completedEvents) ? window.completedEvents : [];
+    // completedEvents is declared with `let` in admin.html, so read the
+    // global lexical binding rather than window.completedEvents.
+    const events = (typeof completedEvents !== 'undefined' && Array.isArray(completedEvents))
+      ? completedEvents : [];
     const count = document.getElementById('eventCount');
     if (count) count.textContent = String(events.length);
 
     if (!events.length) {
       grid.innerHTML = '<div class="event-empty">No completed events yet. Click “+ Add Completed Event” to add one.</div>';
-      if (typeof window.updateStats === 'function') window.updateStats();
+      if (typeof updateStats === 'function') updateStats();
       return;
     }
 
@@ -47,6 +47,6 @@
       </article>`;
     }).join('');
 
-    if (typeof window.updateStats === 'function') window.updateStats();
+    if (typeof updateStats === 'function') updateStats();
   };
 })();
