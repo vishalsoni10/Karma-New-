@@ -1,8 +1,11 @@
 export async function onRequest(context) {
+  const url = new URL(context.request.url);
   const response = await context.next();
   const contentType = response.headers.get('content-type') || '';
 
-  if (!contentType.includes('text/html')) return response;
+  // SEO metadata is for the public homepage only. Never add public canonical/schema
+  // metadata to the private admin panel or API responses.
+  if (url.pathname.startsWith('/admin') || !contentType.includes('text/html')) return response;
 
   const html = await response.text();
   const seo = `
