@@ -55,7 +55,9 @@ function parseDataUrl(dataUrl){
   return {bytes,mime};
 }
 function imageUrl(id){ return `/api?action=image&id=${encodeURIComponent(id)}`; }
+function luxuryImageUrl(id){ return `/api?action=luxury-image&id=${encodeURIComponent(id)}`; }
 function asPublicImage(id){ return id ? imageUrl(id) : ''; }
+function asPublicLuxuryImage(id){ return id ? luxuryImageUrl(id) : ''; }
 const MAX_IMAGE_BYTES = 650000;
 
 async function storeImage(env, dataUrl){
@@ -73,6 +75,26 @@ async function storeImage(env, dataUrl){
 async function deleteImageById(env,id){ if(id) await env.DB.prepare('DELETE FROM event_images WHERE id=?').bind(id).run(); }
 function parseImageId(url){
   try { return new URL(String(url), 'https://karma.local').searchParams.get('id'); } catch { return null; }
+}
+
+async function ensureLuxuryTable(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS luxury_gallery_images (
+    id TEXT PRIMARY KEY,
+    mime_type TEXT NOT NULL,
+    data BLOB NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  )`).run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_luxury_gallery_sort ON luxury_gallery_images(sort_order, created_at)').run();
+}
+async function storeLuxuryImage(env, dataUrl, sortOrder=0){
+  const parsed=parseDataUrl(dataUrl);
+  if(!parsed) throw new Error('Invalid image data');
+  if(parsed.bytes.byteLength > MAX_IMAGE_BYTES) throw new Error('Image is too large after compression. Please use a smaller image.');
+  const id=crypto.randomUUID();
+  await env.DB.prepare('INSERT INTO luxury_gallery_images (id,mime_type,data,sort_order,created_at) VALUES (?,?,?,?,?)')
+    .bind(id,parsed.mime,parsed.bytes,sortOrder,new Date().toISOString()).run();
+  return {id};
 }
 
 export async function onRequest(context) {
@@ -96,12 +118,30 @@ export async function onRequest(context) {
       if(!id) return new Response('Missing image id',{status:400});
       const row=await env.DB.prepare('SELECT mime_type,data FROM event_images WHERE id=?').bind(id).first();
       if(!row) return new Response('Not found',{status:404});
-      // D1 returns BLOB columns as JavaScript arrays. Convert them to a byte buffer
-      // before passing them to the Fetch Response body.
       let body = row.data;
       if (Array.isArray(body)) body = new Uint8Array(body);
       else if (ArrayBuffer.isView(body)) body = new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
       else if (body instanceof ArrayBuffer) body = new Uint8Array(body);
+      return new Response(body,{status:200,headers:{'Content-Type':row.mime_type,'Cache-Control':'public, max-age=31536000, immutable'}});
+    }
+
+    if(action==='luxury-gallery' && request.method==='GET') {
+      await ensureLuxuryTable(env);
+      const rows=await env.DB.prepare('SELECT id,sort_order,created_at FROM luxury_gallery_images ORDER BY sort_order ASC, created_at DESC').all();
+      const images=(rows.results||[]).map(r=>({id:r.id,src:asPublicLuxuryImage(r.id),sort_order:r.sort_order,created_at:r.created_at}));
+      return json({ok:true,images});
+    }
+
+    if(action==='luxury-image' && request.method==='GET') {
+      await ensureLuxuryTable(env);
+      const id=String(url.searchParams.get('id')||'');
+      if(!id) return new Response('Missing image id',{status:400});
+      const row=await env.DB.prepare('SELECT mime_type,data FROM luxury_gallery_images WHERE id=?').bind(id).first();
+      if(!row) return new Response('Not found',{status:404});
+      let body=row.data;
+      if(Array.isArray(body)) body=new Uint8Array(body);
+      else if(ArrayBuffer.isView(body)) body=new Uint8Array(body.buffer,body.byteOffset,body.byteLength);
+      else if(body instanceof ArrayBuffer) body=new Uint8Array(body);
       return new Response(body,{status:200,headers:{'Content-Type':row.mime_type,'Cache-Control':'public, max-age=31536000, immutable'}});
     }
 
@@ -121,6 +161,36 @@ export async function onRequest(context) {
     const authed=await validSession(request,secret);
     if(!authed) return json({ok:false,error:'Unauthorized'},401);
 
+    if(action==='luxury-save' && request.method==='POST') {
+      await ensureLuxuryTable(env);
+      const body=await request.json().catch(()=>({}));
+      const inputs=Array.isArray(body.images)?body.images.slice(0,20):[];
+      if(!inputs.length) return json({ok:false,error:'At least one image is required'},400);
+      const maxOrderRow=await env.DB.prepare('SELECT COALESCE(MAX(sort_order),-1) AS max_order FROM luxury_gallery_images').first();
+      let order=Number(maxOrderRow?.max_order ?? -1)+1;
+      const saved=[];
+      for(const item of inputs){
+        const obj=await storeLuxuryImage(env,String(item),order++);
+        saved.push({id:obj.id,src:asPublicLuxuryImage(obj.id)});
+      }
+      return json({ok:true,images:saved});
+    }
+
+    if(action==='luxury-delete' && request.method==='POST') {
+      await ensureLuxuryTable(env);
+      const body=await request.json().catch(()=>({}));
+      const id=String(body.id||'');
+      if(!id) return json({ok:false,error:'Missing image id'},400);
+      await env.DB.prepare('DELETE FROM luxury_gallery_images WHERE id=?').bind(id).run();
+      return json({ok:true});
+    }
+
+    if(action==='luxury-delete-all' && request.method==='POST') {
+      await ensureLuxuryTable(env);
+      await env.DB.prepare('DELETE FROM luxury_gallery_images').run();
+      return json({ok:true});
+    }
+
     if(action==='event-save' && request.method==='POST') {
       const body=await request.json();
       if(!body.name || !body.date || !body.cover) return json({ok:false,error:'Event name, date and cover image are required'},400);
@@ -138,9 +208,6 @@ export async function onRequest(context) {
       const keepIds=new Set([coverObj.id,...imageObjs.map(x=>x.id)]);
       for(const oldId of oldIds){ if(!keepIds.has(oldId)) await deleteImageById(env,oldId); }
       await env.DB.prepare('DELETE FROM event_images WHERE event_id=?').bind(id).run();
-      await env.DB.prepare('INSERT INTO event_images (id,event_id,mime_type,data,sort_order,created_at) SELECT id,?,mime_type,data,CASE WHEN id=? THEN -1 ELSE ? END,created_at FROM event_images WHERE 1=0').bind(id,coverObj.id,0).run().catch(()=>{});
-      // Re-link existing/new image records without duplicating their data.
-      // Existing records are temporarily event-less until this point; use direct updates/inserts below.
       const allIds=[coverObj.id,...imageObjs.map(x=>x.id)];
       for(let i=0;i<allIds.length;i++){
         const imgId=allIds[i];
