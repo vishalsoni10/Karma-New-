@@ -9,23 +9,78 @@
     .replace(/'/g, '&#039;');
 
   // ---- PUBLIC LUXURY GALLERY ----
-  // The original gallery used CSS-only placeholder art. Replace those blocks
-  // with real event/luxury photography while keeping the existing layout.
+  // Prefer real images stored by the Completed Events admin system.
+  // This keeps the gallery live without duplicating uploaded image files.
   const style = document.createElement('style');
   style.textContent = `
-    .gallery-img{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;position:relative;}
-    .g1{background-image:url('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85')!important;}
-    .g2{background-image:url('https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1400&q=85')!important;}
-    .g3{background-image:url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1400&q=85')!important;}
-    .g4{background-image:url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=85')!important;}
-    .g5{background-image:url('https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1400&q=85')!important;}
-    .g6{background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1400&q=85')!important;}
-    .g7{background-image:url('https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1400&q=85')!important;}
-    .g8{background-image:url('https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85')!important;}
-    .gallery-visual::before{content:''!important;}
-    .gallery-visual::after{background:linear-gradient(180deg,rgba(10,10,10,.02) 35%,rgba(10,10,10,.58) 100%)!important;}
+    .gallery-img{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;position:relative;overflow:hidden;}
+    .gallery-img.has-real-image .gallery-visual{display:none!important;}
+    .gallery-img.has-real-image{height:260px!important;}
+    .gallery-item.gallery-hidden{display:none!important;}
+    .gallery-item .gallery-overlay{z-index:3;}
+    .gallery-item .gallery-overlay span{position:relative;z-index:4;}
+    @media(max-width:768px){.gallery-img.has-real-image{height:230px!important;}}
+    @media(max-width:480px){.gallery-img.has-real-image{height:auto!important;aspect-ratio:4/3;}}
   `;
   document.head.appendChild(style);
+
+  async function loadLuxuryGalleryLive() {
+    const grid = document.querySelector('#gallery .gallery-grid');
+    if (!grid) return;
+
+    try {
+      const response = await fetch('/api?action=events', { cache: 'no-store' });
+      const data = await response.json();
+      const events = Array.isArray(data.events) ? data.events : [];
+      if (!events.length) return;
+
+      const images = [];
+      for (const event of events) {
+        if (event.cover) images.push({ src:event.cover, title:event.name || 'Completed Event' });
+        if (Array.isArray(event.images)) {
+          for (const src of event.images) {
+            if (src) images.push({ src, title:event.name || 'Completed Event' });
+          }
+        }
+      }
+
+      const unique = [];
+      const seen = new Set();
+      for (const item of images) {
+        if (!seen.has(item.src)) {
+          seen.add(item.src);
+          unique.push(item);
+        }
+        if (unique.length >= 8) break;
+      }
+      if (!unique.length) return;
+
+      const cards = Array.from(grid.querySelectorAll('.gallery-item'));
+      cards.forEach((card, index) => {
+        if (index >= unique.length) {
+          card.classList.add('gallery-hidden');
+          return;
+        }
+        const img = card.querySelector('.gallery-img');
+        const label = card.querySelector('.gallery-overlay span');
+        if (!img) return;
+        img.style.backgroundImage = `url("${unique[index].src}")`;
+        img.classList.add('has-real-image');
+        img.setAttribute('aria-label', unique[index].title);
+        if (label) label.textContent = unique[index].title;
+        card.classList.remove('gallery-hidden');
+      });
+    } catch (error) {
+      // Keep the original luxury placeholders as a safe fallback.
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadLuxuryGalleryLive);
+  } else {
+    loadLuxuryGalleryLive();
+  }
+  window.addEventListener('load', loadLuxuryGalleryLive);
 
   // ---- DYNAMIC CURSOR / COMPLETED EVENT FIX ----
   // Completed events are injected after the original cursor listeners are
@@ -75,6 +130,7 @@
     if (typeof window.loadCompletedEventsLive === 'function') {
       try { window.loadCompletedEventsLive(); } catch (e) { /* keep site usable */ }
     }
+    try { loadLuxuryGalleryLive(); } catch (e) { /* keep site usable */ }
   });
 
   // ---- ADMIN COMPLETED EVENTS RENDERER ----
