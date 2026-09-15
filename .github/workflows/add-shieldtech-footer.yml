@@ -67,14 +67,20 @@ jobs:
           </section>
           '''
 
-              # Place the section immediately after the existing
-              # "Proudly Based in Palitana, Gujarat" element.
-              palitana = re.compile(r'<([a-zA-Z][\w:-]*)\b[^>]*>\s*Proudly\s+Based\s+in\s+Palitana\s*,?\s*Gujarat\s*</\1>', re.I)
-              match = palitana.search(text)
+              # Insert immediately after the element containing the Palitana text.
+              # This handles nested spans/formatting more reliably than requiring
+              # the Palitana phrase to be the entire contents of one HTML element.
+              palitana_text = re.compile(r'Proudly\s+Based\s+in\s+Palitana\s*,?\s+Gujarat', re.I)
+              match = palitana_text.search(text)
               if match:
-                  text = text[:match.end()] + section + text[match.end():]
+                  close_tag = text.find('>', match.end())
+                  next_close = text.find('</', match.end())
+                  if next_close != -1:
+                      end = text.find('>', next_close) + 1
+                      text = text[:end] + section + text[end:]
+                  else:
+                      text = text[:match.end()] + section + text[match.end():]
               else:
-                  # Fallback: insert before </body> if the exact Palitana line is not found.
                   pos = text.rfind('</body>')
                   if pos == -1:
                       raise SystemExit('</body> not found')
@@ -101,6 +107,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No website changes needed.'
           else
-            git commit -m 'Place Jain administration section after Palitana'
+            git commit -m 'Fix Jain section placement after Palitana'
             git push
           fi
