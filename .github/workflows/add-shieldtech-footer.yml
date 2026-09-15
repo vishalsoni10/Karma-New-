@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add Jain event administration section after Palitana
+      - name: Move Jain administration section after Palitana block
         run: |
           python3 <<'PY'
           from pathlib import Path
@@ -26,7 +26,17 @@ jobs:
           text = path.read_text(encoding='utf-8')
 
           marker = '<!-- KARMA JAIN EVENT ADMINISTRATION -->'
-          if marker not in text:
+
+          # Remove any existing Jain section wherever a previous run placed it.
+          existing = re.search(
+              re.escape(marker) + r'.*?</section>\s*',
+              text,
+              flags=re.I | re.S,
+          )
+          if existing:
+              section = existing.group(0)
+              text = text[:existing.start()] + text[existing.end():]
+          else:
               section = r'''<!-- KARMA JAIN EVENT ADMINISTRATION -->
           <style>
           .karma-jain-admin{padding:clamp(80px,10vh,130px) clamp(24px,8vw,120px);background:#0D0D0D;position:relative;z-index:1}
@@ -67,34 +77,37 @@ jobs:
           </section>
           '''
 
-              # Put the Jain section immediately after the existing section/block
-              # that contains the site's "Proudly Based in Palitana, Gujarat" text.
-              palitana = re.search(r'Palitana', text, re.I)
-              if palitana:
-                  end_section = text.find('</section>', palitana.end())
-                  if end_section != -1:
-                      insert_at = end_section + len('</section>')
-                      text = text[:insert_at] + section + text[insert_at:]
-                  else:
-                      pos = text.rfind('</body>')
-                      if pos == -1:
-                          raise SystemExit('</body> not found')
-                      text = text[:pos] + section + text[pos:]
-              else:
-                  pos = text.rfind('</body>')
-                  if pos == -1:
-                      raise SystemExit('</body> not found')
-                  text = text[:pos] + section + text[pos:]
+          # Locate the section containing the exact Palitana positioning text.
+          target = re.search(r'Proudly\s+Based\s+in\s+Palitana,\s+Gujarat', text, flags=re.I)
+          if not target:
+              # Fallback: use the last Palitana occurrence, which is safer than
+              # using the first occurrence elsewhere in the page.
+              matches = list(re.finditer(r'Palitana', text, flags=re.I))
+              target = matches[-1] if matches else None
 
+          if target:
+              section_start = text.rfind('<section', 0, target.start())
+              section_end = text.find('</section>', target.end())
+              if section_end != -1:
+                  insert_at = section_end + len('</section>')
+                  text = text[:insert_at] + '\n\n' + section + text[insert_at:]
+              else:
+                  raise SystemExit('Could not find closing section after Palitana block')
+          else:
+              raise SystemExit('Could not find Palitana text in index.html')
+
+          # Keep the ShieldTech credit at the very end, after the site footer.
           footer_marker = '<!-- SHIELDTECH FOOTER -->'
-          if footer_marker not in text:
+          footer_match = re.search(re.escape(footer_marker) + r'.*?</div>\s*', text, flags=re.I | re.S)
+          if not footer_match:
               footer = '''<!-- SHIELDTECH FOOTER -->
           <style>.shieldtech-credit{padding:22px 20px 26px;text-align:center;background:#0A0A0A;border-top:1px solid rgba(212,175,55,.15);font-family:'Montserrat',sans-serif;font-size:12px;letter-spacing:.08em;color:rgba(248,245,238,.55)}.shieldtech-credit .heart{color:#4da3ff}.shieldtech-credit a{color:#D4AF37;text-decoration:none;font-weight:500}</style>
           <div class="shieldtech-credit">Built by <span class="heart">💙</span> with <a href="tel:8881988802">ShieldTech Services</a> · Contact <a href="tel:8881988802">8881988802</a></div>
           '''
               pos = text.rfind('</body>')
-              if pos != -1:
-                  text = text[:pos] + footer + text[pos:]
+              if pos == -1:
+                  raise SystemExit('</body> not found')
+              text = text[:pos] + footer + text[pos:]
 
           path.write_text(text, encoding='utf-8')
           PY
@@ -107,6 +120,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No website changes needed.'
           else
-            git commit -m 'Add Jain administration section after Palitana'
+            git commit -m 'Move Jain administration section after Palitana block'
             git push
           fi
