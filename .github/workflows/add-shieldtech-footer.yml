@@ -1,4 +1,4 @@
-name: Update Karma Jain Website
+name: Update Karma Jain Event Section
 
 on:
   push:
@@ -13,95 +13,83 @@ jobs:
   update-karma-site:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: true
 
-      - name: Update index.html
-        shell: python
+      - name: Add Jain event administration section and footer
         run: |
+          python3 <<'PY'
           from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
 
-          path = Path("index.html")
-          if not path.exists():
-              raise SystemExit("index.html not found")
-
-          text = path.read_text(encoding="utf-8")
-          marker = "<!-- KARMA JAIN EVENT ADMINISTRATION -->"
-
+          marker = '<!-- KARMA JAIN EVENT ADMINISTRATION -->'
           if marker not in text:
-              section = '''
-<!-- KARMA JAIN EVENT ADMINISTRATION -->
-<style>
-.karma-jain-admin{padding:clamp(80px,10vh,130px) clamp(24px,8vw,120px);background:#0D0D0D;position:relative;z-index:1}
-.karma-jain-admin-inner{max-width:1200px;margin:auto}
-.karma-jain-admin-label{display:block;color:#D4AF37;font:500 .55rem 'Montserrat',sans-serif;letter-spacing:.55em;text-transform:uppercase;margin-bottom:16px}
-.karma-jain-admin-title{font:600 clamp(2rem,4.5vw,4rem) 'Cinzel',serif;color:#F8F5EE;line-height:1.12;margin:0 0 20px}
-.karma-jain-admin-title span{color:#D4AF37}
-.karma-jain-admin-intro{max-width:820px;color:rgba(248,245,238,.62);font:300 1rem/1.9 'Montserrat',sans-serif;margin-bottom:52px}
-.karma-jain-admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-.karma-jain-admin-card{padding:30px 26px;background:rgba(255,255,255,.025);border:1px solid rgba(212,175,55,.14);transition:.3s}
-.karma-jain-admin-card:hover{transform:translateY(-5px);border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.045)}
-.karma-jain-admin-num{color:#D4AF37;font:500 .58rem 'Montserrat',sans-serif;letter-spacing:.25em;margin-bottom:18px}
-.karma-jain-admin-card h3{color:#F8F5EE;font:600 1.12rem 'Cinzel',serif;margin-bottom:12px}
-.karma-jain-admin-card p{color:rgba(248,245,238,.55);font:300 .82rem/1.8 'Montserrat',sans-serif}
-.karma-jain-admin-bottom{margin-top:42px;padding:28px 30px;border:1px solid rgba(212,175,55,.16);color:rgba(248,245,238,.6);font:300 .88rem/1.85 'Montserrat',sans-serif}
-.karma-jain-admin-bottom strong{color:#D4AF37;font-weight:500}
-@media(max-width:800px){.karma-jain-admin-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:520px){.karma-jain-admin-grid{grid-template-columns:1fr}.karma-jain-admin{padding-left:20px;padding-right:20px}}
-</style>
-<section class="karma-jain-admin" id="jain-event-management" aria-labelledby="jain-admin-title">
-<div class="karma-jain-admin-inner">
-<span class="karma-jain-admin-label">Jain Event Administration &amp; Hospitality</span>
-<h2 class="karma-jain-admin-title" id="jain-admin-title">Why Choose Us for <span>Your Jain Event?</span></h2>
-<p class="karma-jain-admin-intro">Karma is focused on the details that make Jain Sangh, Yatra, Chaturmas, Paryushan, Upadhan Tap, Samvatsari, Pratishtha and other religious programs run smoothly. Our team manages the administration behind the event — from guest records and room allotment to transportation, attendance, bahuman, prabhavna, hospitality and on-ground coordination.</p>
-<div class="karma-jain-admin-grid">
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">01 / ADMINISTRATION</div><h3>Complete Jain Event Administration</h3><p>Centralized planning, schedules, registrations, guest records, team coordination and day-to-day administration for organized Jain events.</p></article>
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">02 / ROOM ALLOTMENT</div><h3>Room Allotment &amp; Accommodation</h3><p>Systematic room allocation, check-in coordination, guest lists, room records and accommodation support for Sangh members, guests and volunteers.</p></article>
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">03 / HOSPITALITY</div><h3>Jain Hospitality Management</h3><p>Dedicated guest hospitality, welcome desks, helpdesks, VIP care, Sadhu-Sadhvi hospitality coordination and respectful guest service.</p></article>
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">04 / LOGISTICS</div><h3>Logistics &amp; Transportation</h3><p>Bus Sangh coordination, vehicle planning, pickup and drop, railway and airport coordination, route schedules and movement management.</p></article>
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">05 / ATTENDANCE</div><h3>Attendance &amp; Registration</h3><p>Participant registration, attendance tracking, family or group records, counters, passes and accurate event-day participant coordination.</p></article>
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">06 / BAHUMAN &amp; PRABHAVNA</div><h3>Bahuman &amp; Prabhavna Management</h3><p>Careful planning and coordination for bahuman, prabhavna, felicitation, gifts, dignitary arrangements and presentation flow.</p></article>
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">07 / FOOD &amp; SEVA</div><h3>Food, Seva &amp; Swamivatsalya</h3><p>Guest meal coordination, Ayambil and religious food arrangements, Swamivatsalya planning, counters, volunteers and service flow.</p></article>
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">08 / SANGH</div><h3>Sangh &amp; Bus Sangh Management</h3><p>End-to-end coordination for Jain Sangh and Bus Sangh programs including registration, accommodation, transportation, hospitality and volunteers.</p></article>
-<article class="karma-jain-admin-card"><div class="karma-jain-admin-num">09 / EXECUTION</div><h3>On-Ground Event Execution</h3><p>Professional event-day supervision across vendors, volunteers, schedules, guest movement, stage programs, announcements and operational requirements.</p></article>
-</div>
-<div class="karma-jain-admin-bottom"><strong>Premium Jain Event Management</strong> means more than decoration. Karma combines administration, logistics, hospitality, room allotment, attendance, bahuman, prabhavna, food, transportation and complete on-ground execution to deliver a disciplined and dignified Jain event experience.</div>
-</div>
-</section>
-'''
-              pos = text.rfind("</body>")
-              if pos < 0:
-                  raise SystemExit("</body> not found in index.html")
+              section = r'''<!-- KARMA JAIN EVENT ADMINISTRATION -->
+          <style>
+          .karma-jain-admin{padding:clamp(80px,10vh,130px) clamp(24px,8vw,120px);background:#0D0D0D;position:relative;z-index:1}
+          .karma-jain-admin-inner{max-width:1200px;margin:auto}
+          .karma-jain-admin-label{display:block;color:#D4AF37;font:500 .55rem 'Montserrat',sans-serif;letter-spacing:.55em;text-transform:uppercase;margin-bottom:16px}
+          .karma-jain-admin-title{font:600 clamp(2rem,4.5vw,4rem) 'Cinzel',serif;color:#F8F5EE;line-height:1.12;margin:0 0 20px}
+          .karma-jain-admin-title span{color:#D4AF37}
+          .karma-jain-admin-intro{max-width:820px;color:rgba(248,245,238,.62);font:300 1rem/1.9 'Montserrat',sans-serif;margin-bottom:52px}
+          .karma-jain-admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+          .karma-jain-admin-card{padding:30px 26px;background:rgba(255,255,255,.025);border:1px solid rgba(212,175,55,.14);transition:.3s}
+          .karma-jain-admin-card:hover{transform:translateY(-5px);border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.045)}
+          .karma-jain-admin-num{color:#D4AF37;font:500 .58rem 'Montserrat',sans-serif;letter-spacing:.25em;margin-bottom:18px}
+          .karma-jain-admin-card h3{color:#F8F5EE;font:600 1.12rem 'Cinzel',serif;margin-bottom:12px}
+          .karma-jain-admin-card p{color:rgba(248,245,238,.55);font:300 .82rem/1.8 'Montserrat',sans-serif}
+          .karma-jain-admin-bottom{margin-top:42px;padding:28px 30px;border:1px solid rgba(212,175,55,.16);color:rgba(248,245,238,.6);font:300 .88rem/1.85 'Montserrat',sans-serif}
+          .karma-jain-admin-bottom strong{color:#D4AF37;font-weight:500}
+          @media(max-width:800px){.karma-jain-admin-grid{grid-template-columns:1fr 1fr}}
+          @media(max-width:520px){.karma-jain-admin-grid{grid-template-columns:1fr}.karma-jain-admin{padding-left:20px;padding-right:20px}}
+          </style>
+          <section class="karma-jain-admin" id="jain-event-management" aria-labelledby="jain-admin-title">
+          <div class="karma-jain-admin-inner">
+          <span class="karma-jain-admin-label">Jain Event Administration &amp; Hospitality</span>
+          <h2 class="karma-jain-admin-title" id="jain-admin-title">Why Choose Us for <span>Your Jain Event?</span></h2>
+          <p class="karma-jain-admin-intro">Karma specialises in the administration behind Jain Sangh, Yatra, Chaturmas, Paryushan, Upadhan Tap, Samvatsari, Pratishtha and other religious programs — from guest records and room allotment to transportation, attendance, bahuman, prabhavna, hospitality and on-ground coordination.</p>
+          <div class="karma-jain-admin-grid">
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">01 / ADMINISTRATION</div><h3>Complete Jain Event Administration</h3><p>Centralized planning, schedules, registrations, guest records, team coordination and day-to-day administration.</p></article>
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">02 / ROOM ALLOTMENT</div><h3>Room Allotment &amp; Accommodation</h3><p>Systematic room allocation, check-in coordination, guest lists, room records and accommodation support.</p></article>
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">03 / HOSPITALITY</div><h3>Jain Hospitality Management</h3><p>Welcome desks, helpdesks, VIP care and respectful hospitality coordination for guests and religious programs.</p></article>
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">04 / LOGISTICS</div><h3>Logistics &amp; Transportation</h3><p>Bus Sangh coordination, vehicle planning, pickup and drop, railway and airport coordination, routes and movement.</p></article>
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">05 / ATTENDANCE</div><h3>Attendance &amp; Registration</h3><p>Participant registration, attendance tracking, family and group records, counters and event-day coordination.</p></article>
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">06 / BAHUMAN &amp; PRABHAVNA</div><h3>Bahuman &amp; Prabhavna Management</h3><p>Planning and coordination for bahuman, prabhavna, felicitation, gifts, dignitary arrangements and presentation flow.</p></article>
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">07 / FOOD &amp; SEVA</div><h3>Food, Seva &amp; Swamivatsalya</h3><p>Guest meal coordination, Ayambil and religious food arrangements, Swamivatsalya planning, counters and volunteers.</p></article>
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">08 / SANGH</div><h3>Sangh &amp; Bus Sangh Management</h3><p>End-to-end coordination including registration, accommodation, transportation, hospitality and volunteer support.</p></article>
+          <article class="karma-jain-admin-card"><div class="karma-jain-admin-num">09 / EXECUTION</div><h3>On-Ground Event Execution</h3><p>Supervision across vendors, volunteers, schedules, guest movement, stage programs and operational requirements.</p></article>
+          </div>
+          <div class="karma-jain-admin-bottom"><strong>Premium Jain Event Management</strong> means more than decoration. Karma combines administration, logistics, hospitality, room allotment, attendance, bahuman, prabhavna, food, transportation and complete on-ground execution for a disciplined and dignified Jain event experience.</div>
+          </div>
+          </section>
+          '''
+              pos = text.rfind('</body>')
+              if pos == -1:
+                  raise SystemExit('</body> not found')
               text = text[:pos] + section + text[pos:]
 
-          footer_marker = "<!-- SHIELDTECH FOOTER -->"
+          footer_marker = '<!-- SHIELDTECH FOOTER -->'
           if footer_marker not in text:
-              footer = '''
-<!-- SHIELDTECH FOOTER -->
-<style>.shieldtech-credit{padding:22px 20px 26px;text-align:center;background:#0A0A0A;border-top:1px solid rgba(212,175,55,.15);font-family:'Montserrat',sans-serif;font-size:12px;letter-spacing:.08em;color:rgba(248,245,238,.55)}.shieldtech-credit .heart{color:#4da3ff}.shieldtech-credit a{color:#D4AF37;text-decoration:none;font-weight:500}</style>
-<div class="shieldtech-credit">Built by <span class="heart">💙</span> with <a href="tel:8881988802">ShieldTech Services</a> · Contact <a href="tel:8881988802">8881988802</a></div>
-'''
-              pos = text.rfind("</body>")
-              if pos >= 0:
+              footer = '''<!-- SHIELDTECH FOOTER -->
+          <style>.shieldtech-credit{padding:22px 20px 26px;text-align:center;background:#0A0A0A;border-top:1px solid rgba(212,175,55,.15);font-family:'Montserrat',sans-serif;font-size:12px;letter-spacing:.08em;color:rgba(248,245,238,.55)}.shieldtech-credit .heart{color:#4da3ff}.shieldtech-credit a{color:#D4AF37;text-decoration:none;font-weight:500}</style>
+          <div class="shieldtech-credit">Built by <span class="heart">💙</span> with <a href="tel:8881988802">ShieldTech Services</a> · Contact <a href="tel:8881988802">8881988802</a></div>
+          '''
+              pos = text.rfind('</body>')
+              if pos != -1:
                   text = text[:pos] + footer + text[pos:]
 
-          path.write_text(text, encoding="utf-8")
-          print("index.html updated successfully")
+          path.write_text(text, encoding='utf-8')
+          PY
 
-      - name: Commit and push website changes
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Commit website update
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git status --short
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           if git diff --cached --quiet; then
-            echo "No website changes needed."
-            exit 0
+            echo 'No website changes needed.'
+          else
+            git commit -m 'Add Jain event administration section to homepage'
+            git push
           fi
-          git commit -m "Add Jain event administration and hospitality section"
-          git push origin HEAD:main
