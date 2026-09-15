@@ -15,29 +15,83 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add ShieldTech footer
+      - name: Add Karma SEO and Why Choose section
         shell: python
         run: |
           from pathlib import Path
 
           path = Path("index.html")
           text = path.read_text(encoding="utf-8")
-          marker = "<!-- SHIELDTECH FOOTER -->"
 
-          if marker not in text:
-              footer = '''\n<!-- SHIELDTECH FOOTER -->\n<style>\n  .shieldtech-credit {\n    padding: 22px 20px 26px;\n    text-align: center;\n    background: #0A0A0A;\n    border-top: 1px solid rgba(212,175,55,0.15);\n    font-family: 'Montserrat', sans-serif;\n    font-size: 12px;\n    letter-spacing: .08em;\n    color: rgba(248,245,238,0.55);\n  }\n  .shieldtech-credit .heart { color: #4da3ff; }\n  .shieldtech-credit a {\n    color: #D4AF37;\n    text-decoration: none;\n    font-weight: 500;\n  }\n  .shieldtech-credit a:hover { color: #F5D67B; }\n</style>\n<div class="shieldtech-credit">\n  Built by <span class="heart">💙</span> with <a href="tel:8881988802">ShieldTech Services</a> · Contact <a href="tel:8881988802">8881988802</a>\n</div>\n'''
+          why_marker = "<!-- KARMA WHY CHOOSE US -->"
+          if why_marker not in text:
+              why_section = '''
+<!-- KARMA WHY CHOOSE US -->
+<style>
+  .karma-why { padding: clamp(80px,10vh,130px) clamp(24px,8vw,120px); background: #0D0D0D; position: relative; z-index: 1; }
+  .karma-why-inner { max-width: 1200px; margin: 0 auto; }
+  .karma-why-head { max-width: 820px; margin-bottom: 55px; }
+  .karma-why-label { display:block; color:#D4AF37; font:500 .55rem 'Montserrat',sans-serif; letter-spacing:.55em; text-transform:uppercase; margin-bottom:16px; }
+  .karma-why-title { font:600 clamp(2rem,4.5vw,4rem) 'Cinzel',serif; color:#F8F5EE; line-height:1.12; margin:0 0 20px; }
+  .karma-why-title span { color:#D4AF37; }
+  .karma-why-intro { color:rgba(248,245,238,.62); font:300 1rem/1.9 'Montserrat',sans-serif; max-width:760px; }
+  .karma-why-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  .karma-why-card { padding:30px 26px; background:rgba(255,255,255,.025); border:1px solid rgba(212,175,55,.14); transition:transform .3s,border-color .3s,background .3s; }
+  .karma-why-card:hover { transform:translateY(-5px); border-color:rgba(212,175,55,.45); background:rgba(212,175,55,.045); }
+  .karma-why-num { color:#D4AF37; font:500 .58rem 'Montserrat',sans-serif; letter-spacing:.25em; margin-bottom:18px; }
+  .karma-why-card h3 { color:#F8F5EE; font:600 1.2rem 'Cinzel',serif; margin-bottom:12px; }
+  .karma-why-card p { color:rgba(248,245,238,.53); font:300 .83rem/1.8 'Montserrat',sans-serif; }
+  .karma-why-bottom { margin-top:42px; padding-top:30px; border-top:1px solid rgba(212,175,55,.13); color:rgba(248,245,238,.58); font:300 .9rem/1.8 'Montserrat',sans-serif; }
+  .karma-why-bottom strong { color:#D4AF37; font-weight:500; }
+  @media(max-width:800px){ .karma-why-grid{grid-template-columns:1fr 1fr;} }
+  @media(max-width:520px){ .karma-why-grid{grid-template-columns:1fr;} .karma-why{padding-left:20px;padding-right:20px;} }
+</style>
+<section class="karma-why" id="why-choose-us" aria-labelledby="why-choose-title">
+  <div class="karma-why-inner">
+    <div class="karma-why-head">
+      <span class="karma-why-label">Why Choose Karma</span>
+      <h2 class="karma-why-title" id="why-choose-title">Why Choose Us for <span>Your Event?</span></h2>
+      <p class="karma-why-intro">Choose Karma Event Management &amp; Hospitality when your celebration deserves more than ordinary event planning. We combine premium event management, thoughtful hospitality and disciplined execution to create refined, memorable experiences from concept to completion.</p>
+    </div>
+    <div class="karma-why-grid">
+      <article class="karma-why-card"><div class="karma-why-num">01 / PREMIUM</div><h3>Premium Event Management</h3><p>Elegant concepts, polished production and meticulous attention to detail for events that feel premium at every touchpoint.</p></article>
+      <article class="karma-why-card"><div class="karma-why-num">02 / EXPERTISE</div><h3>Experienced Planning</h3><p>Clear planning, professional coordination and structured execution designed to keep your event smooth and stress-free.</p></article>
+      <article class="karma-why-card"><div class="karma-why-num">03 / END-TO-END</div><h3>Complete Event Solutions</h3><p>From venue preparation and decoration to hospitality, logistics, guest management and on-ground execution, we coordinate the complete experience.</p></article>
+      <article class="karma-why-card"><div class="karma-why-num">04 / HOSPITALITY</div><h3>Luxury Hospitality</h3><p>Thoughtful guest care, accommodation coordination, transportation and VIP hospitality that make every guest feel valued.</p></article>
+      <article class="karma-why-card"><div class="karma-why-num">05 / PRECISION</div><h3>Seamless Coordination</h3><p>One coordinated approach across vendors, teams, schedules and event operations helps every important detail stay on track.</p></article>
+      <article class="karma-why-card"><div class="karma-why-num">06 / EXPERIENCE</div><h3>Memorable Experiences</h3><p>We focus on atmosphere, presentation and guest experience so your event is remembered for the right reasons.</p></article>
+    </div>
+    <div class="karma-why-bottom"><strong>Karma Event Management &amp; Hospitality</strong> delivers premium event planning, hospitality, production and execution for celebrations, corporate events, destination events and Jain religious and community programs across India.</div>
+  </div>
+</section>
+'''
               body_close = text.rfind("</body>")
               if body_close == -1:
                   raise SystemExit("</body> not found in index.html")
-              text = text[:body_close] + footer + text[body_close:]
-              path.write_text(text, encoding="utf-8")
+              text = text[:body_close] + why_section + text[body_close:]
           else:
-              print("ShieldTech footer already present")
+              print("Why Choose Karma section already present")
 
-      - name: Commit footer
+          footer_marker = "<!-- SHIELDTECH FOOTER -->"
+          if footer_marker not in text:
+              footer = '''
+<!-- SHIELDTECH FOOTER -->
+<style>
+  .shieldtech-credit { padding:22px 20px 26px; text-align:center; background:#0A0A0A; border-top:1px solid rgba(212,175,55,0.15); font-family:'Montserrat',sans-serif; font-size:12px; letter-spacing:.08em; color:rgba(248,245,238,0.55); }
+  .shieldtech-credit .heart { color:#4da3ff; }
+  .shieldtech-credit a { color:#D4AF37; text-decoration:none; font-weight:500; }
+  .shieldtech-credit a:hover { color:#F5D67B; }
+</style>
+<div class="shieldtech-credit">Built by <span class="heart">💙</span> with <a href="tel:8881988802">ShieldTech Services</a> · Contact <a href="tel:8881988802">8881988802</a></div>
+'''
+              body_close = text.rfind("</body>")
+              text = text[:body_close] + footer + text[body_close:]
+          path.write_text(text, encoding="utf-8")
+
+      - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Add ShieldTech Services website credit"
+          git diff --cached --quiet || git commit -m "Add Why Choose Karma premium event section"
           git push
