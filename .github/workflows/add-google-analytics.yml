@@ -1,20 +1,23 @@
 name: Add Google Analytics
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["Update Karma Jain Event Section"]
+    types: [completed]
 
 permissions:
   contents: write
 
 jobs:
   add-google-analytics:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout latest main
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Add Google Analytics tag
         run: |
@@ -38,11 +41,12 @@ jobs:
               if 'G-KHL3ZV7VZN' in text:
                   print(f'{filename}: Google Analytics already present')
                   continue
+              lower = text.lower()
               marker = '<head>'
-              if marker not in text.lower():
+              if marker not in lower:
                   print(f'{filename}: <head> not found; skipped')
                   continue
-              pos = text.lower().find(marker) + len(marker)
+              pos = lower.find(marker) + len(marker)
               text = text[:pos] + '\n' + tag + '\n' + text[pos:]
               path.write_text(text, encoding='utf-8')
               print(f'{filename}: Google Analytics added')
@@ -57,5 +61,5 @@ jobs:
             echo 'No website changes needed.'
           else
             git commit -m 'Add Google Analytics tracking'
-            git push
+            git push origin main
           fi
