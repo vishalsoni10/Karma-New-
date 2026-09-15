@@ -1,0 +1,46 @@
+name: Keep ShieldTech Partnership in Sitemap
+
+on:
+  workflow_run:
+    workflows:
+      - Update Karma Jain Event Section and SEO
+    types:
+      - completed
+
+permissions:
+  contents: write
+
+jobs:
+  ensure-partnership-url:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Ensure partnership URL is in sitemap
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('sitemap.xml')
+          text = p.read_text(encoding='utf-8')
+          url = 'https://karmaevent.in/partnership/shieldtech-services/'
+          if url not in text:
+              entry = '  <url><loc>' + url + '</loc><lastmod>2026-09-15</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>\n'
+              text = text.replace('</urlset>', entry + '</urlset>')
+              p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit if changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sitemap.xml
+          if git diff --cached --quiet; then
+            echo 'Partnership URL already present.'
+          else
+            git commit -m 'Keep ShieldTech partnership page in sitemap'
+            git push origin main
+          fi
