@@ -20,6 +20,8 @@ jobs:
         run: |
           python3 <<'PY'
           from pathlib import Path
+          import re
+
           path = Path('index.html')
           text = path.read_text(encoding='utf-8')
 
@@ -64,10 +66,19 @@ jobs:
           </div>
           </section>
           '''
-              pos = text.rfind('</body>')
-              if pos == -1:
-                  raise SystemExit('</body> not found')
-              text = text[:pos] + section + text[pos:]
+
+              # Place the section immediately after the existing
+              # "Proudly Based in Palitana, Gujarat" element.
+              palitana = re.compile(r'<([a-zA-Z][\w:-]*)\b[^>]*>\s*Proudly\s+Based\s+in\s+Palitana\s*,?\s*Gujarat\s*</\1>', re.I)
+              match = palitana.search(text)
+              if match:
+                  text = text[:match.end()] + section + text[match.end():]
+              else:
+                  # Fallback: insert before </body> if the exact Palitana line is not found.
+                  pos = text.rfind('</body>')
+                  if pos == -1:
+                      raise SystemExit('</body> not found')
+                  text = text[:pos] + section + text[pos:]
 
           footer_marker = '<!-- SHIELDTECH FOOTER -->'
           if footer_marker not in text:
@@ -90,6 +101,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No website changes needed.'
           else
-            git commit -m 'Add Jain event administration section to homepage'
+            git commit -m 'Place Jain administration section after Palitana'
             git push
           fi
