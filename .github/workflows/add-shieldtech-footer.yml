@@ -1,8 +1,9 @@
-name: Add ShieldTech Footer
+name: Update Karma Jain Website
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -12,17 +13,24 @@ jobs:
   update-karma-site:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
-      - name: Add Jain event administration section
+      - name: Update index.html
         shell: python
         run: |
           from pathlib import Path
-          path = Path("index.html")
-          text = path.read_text(encoding="utf-8")
 
+          path = Path("index.html")
+          if not path.exists():
+              raise SystemExit("index.html not found")
+
+          text = path.read_text(encoding="utf-8")
           marker = "<!-- KARMA JAIN EVENT ADMINISTRATION -->"
+
           if marker not in text:
               section = '''
 <!-- KARMA JAIN EVENT ADMINISTRATION -->
@@ -65,7 +73,8 @@ jobs:
 </section>
 '''
               pos = text.rfind("</body>")
-              if pos == -1: raise SystemExit("</body> not found")
+              if pos < 0:
+                  raise SystemExit("</body> not found in index.html")
               text = text[:pos] + section + text[pos:]
 
           footer_marker = "<!-- SHIELDTECH FOOTER -->"
@@ -76,14 +85,23 @@ jobs:
 <div class="shieldtech-credit">Built by <span class="heart">💙</span> with <a href="tel:8881988802">ShieldTech Services</a> · Contact <a href="tel:8881988802">8881988802</a></div>
 '''
               pos = text.rfind("</body>")
-              if pos != -1: text = text[:pos] + footer + text[pos:]
+              if pos >= 0:
+                  text = text[:pos] + footer + text[pos:]
 
           path.write_text(text, encoding="utf-8")
+          print("index.html updated successfully")
 
-      - name: Commit changes
+      - name: Commit and push website changes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status --short
           git add index.html
-          git diff --cached --quiet || git commit -m "Add Jain event administration and hospitality section"
-          git push
+          if git diff --cached --quiet; then
+            echo "No website changes needed."
+            exit 0
+          fi
+          git commit -m "Add Jain event administration and hospitality section"
+          git push origin HEAD:main
