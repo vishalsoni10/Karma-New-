@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add Jain event administration section and footer
+      - name: Add Jain event administration section after Palitana
         run: |
           python3 <<'PY'
           from pathlib import Path
@@ -67,19 +67,19 @@ jobs:
           </section>
           '''
 
-              # Insert immediately after the element containing the Palitana text.
-              # This handles nested spans/formatting more reliably than requiring
-              # the Palitana phrase to be the entire contents of one HTML element.
-              palitana_text = re.compile(r'Proudly\s+Based\s+in\s+Palitana\s*,?\s+Gujarat', re.I)
-              match = palitana_text.search(text)
-              if match:
-                  close_tag = text.find('>', match.end())
-                  next_close = text.find('</', match.end())
-                  if next_close != -1:
-                      end = text.find('>', next_close) + 1
-                      text = text[:end] + section + text[end:]
+              # Put the Jain section immediately after the existing section/block
+              # that contains the site's "Proudly Based in Palitana, Gujarat" text.
+              palitana = re.search(r'Palitana', text, re.I)
+              if palitana:
+                  end_section = text.find('</section>', palitana.end())
+                  if end_section != -1:
+                      insert_at = end_section + len('</section>')
+                      text = text[:insert_at] + section + text[insert_at:]
                   else:
-                      text = text[:match.end()] + section + text[match.end():]
+                      pos = text.rfind('</body>')
+                      if pos == -1:
+                          raise SystemExit('</body> not found')
+                      text = text[:pos] + section + text[pos:]
               else:
                   pos = text.rfind('</body>')
                   if pos == -1:
@@ -107,6 +107,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No website changes needed.'
           else
-            git commit -m 'Fix Jain section placement after Palitana'
+            git commit -m 'Add Jain administration section after Palitana'
             git push
           fi
