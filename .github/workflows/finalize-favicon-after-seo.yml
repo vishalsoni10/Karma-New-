@@ -1,0 +1,49 @@
+name: Finalize Karma Google Favicon
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["Update Karma Jain Event Section and SEO"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  favicon:
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Ensure favicon link survives SEO rebuilds
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<link rel="icon" href="/favicon.png" type="image/png">'
+          # Remove any existing icon declarations, then install one stable Google-supported PNG favicon.
+          s = re.sub(r'\n?<link[^>]+rel=["\'](?:icon|shortcut icon)["\'][^>]*>', '', s, flags=re.I)
+          pos = s.lower().find('</head>')
+          if pos == -1:
+              raise SystemExit('Missing </head>')
+          s = s[:pos] + '\n' + tag + '\n' + s[pos:]
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit if changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'Karma favicon link is already correct.'
+          else
+            git commit -m 'Ensure Karma Google favicon link'
+            git push
+          fi
