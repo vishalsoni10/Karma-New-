@@ -27,6 +27,7 @@ export async function onRequestGet(context) {
   const { env } = context;
   const staticUrls = [
     { loc: '/', lastmod: '2026-09-15', changefreq: 'weekly', priority: '1.0' },
+    { loc: '/events/', lastmod: '2026-09-17', changefreq: 'weekly', priority: '0.8' },
     { loc: '/jain-event-organizer/', lastmod: '2026-09-15', changefreq: 'weekly', priority: '0.8' },
     { loc: '/jain-event-management/', lastmod: '2026-09-15', changefreq: 'weekly', priority: '0.8' },
     { loc: '/jain-sangh-management/', lastmod: '2026-09-15', changefreq: 'weekly', priority: '0.8' },
