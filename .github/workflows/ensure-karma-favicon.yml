@@ -1,0 +1,45 @@
+name: Ensure Karma Google Favicon
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  favicon:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add Karma favicon to homepage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+          tag = '<link rel="icon" type="image/x-icon" href="/favicon.ico">'
+          if '/favicon.ico' not in text.lower():
+              pos = text.lower().find('</head>')
+              if pos == -1:
+                  raise SystemExit('Missing </head>')
+              text = text[:pos] + tag + '\n' + text[pos:]
+              p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit favicon integration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'Favicon link already present.'
+          else
+            git commit -m 'Add Karma Events favicon for Google Search'
+            git push
+          fi
