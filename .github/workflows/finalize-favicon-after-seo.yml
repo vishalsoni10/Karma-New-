@@ -3,25 +3,20 @@ name: Finalize Karma Google Favicon
 on:
   push:
     branches: [main]
-  workflow_run:
-    workflows: ["Update Karma Jain Event Section and SEO"]
-    types: [completed]
 
 permissions:
   contents: write
 
 jobs:
   favicon:
-    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Wait for SEO rebuild to finish on push-triggered runs
-        if: github.event_name == 'push'
-        run: sleep 45
+      - name: Wait for SEO rebuild to finish
+        run: sleep 60
 
       - name: Ensure favicon link survives SEO rebuilds
         run: |
