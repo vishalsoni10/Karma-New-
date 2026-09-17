@@ -16,30 +16,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add Karma favicon to homepage
+      - name: Install Karma favicon
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
+          import base64
+
+          # 32x32 square Karma lotus favicon, generated from the supplied logo.
+          favicon_b64 = "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"
+          Path('favicon.png').write_bytes(base64.b64decode(favicon_b64))
+
           p = Path('index.html')
           text = p.read_text(encoding='utf-8')
-          tag = '<link rel="icon" type="image/x-icon" href="/favicon.ico">'
-          if '/favicon.ico' not in text.lower():
+          import re
+          tag = '<link rel="icon" type="image/png" href="/favicon.png">'
+          text = re.sub(r'<link[^>]+rel=["\']icon["\'][^>]*>', tag, text, count=1, flags=re.I)
+          if tag not in text:
               pos = text.lower().find('</head>')
               if pos == -1:
                   raise SystemExit('Missing </head>')
               text = text[:pos] + tag + '\n' + text[pos:]
-              p.write_text(text, encoding='utf-8')
+          p.write_text(text, encoding='utf-8')
           PY
 
       - name: Commit favicon integration
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html favicon.png
           if git diff --cached --quiet; then
-            echo 'Favicon link already present.'
+            echo 'Karma favicon already installed.'
           else
-            git commit -m 'Add Karma Events favicon for Google Search'
+            git commit -m 'Set Karma lotus logo as Google favicon'
             git push
           fi
