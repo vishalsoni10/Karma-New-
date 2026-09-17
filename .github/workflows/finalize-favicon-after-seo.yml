@@ -19,6 +19,10 @@ jobs:
         with:
           ref: main
 
+      - name: Wait for SEO rebuild to finish on push-triggered runs
+        if: github.event_name == 'push'
+        run: sleep 45
+
       - name: Ensure favicon link survives SEO rebuilds
         run: |
           python3 - <<'PY'
@@ -27,7 +31,6 @@ jobs:
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
           tag = '<link rel="icon" href="/favicon.png" type="image/png">'
-          # Remove any existing icon declarations, then install one stable Google-supported PNG favicon.
           s = re.sub(r'\n?<link[^>]+rel=["\'](?:icon|shortcut icon)["\'][^>]*>', '', s, flags=re.I)
           pos = s.lower().find('</head>')
           if pos == -1:
@@ -44,6 +47,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Karma favicon link is already correct.'
           else
-            git commit -m 'Ensure Karma Google favicon link'
+            git commit -m 'Ensure Karma Google favicon link [skip ci]'
             git push
           fi
